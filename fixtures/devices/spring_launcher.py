@@ -7,7 +7,7 @@ the building agent or the learning agent.
 from __future__ import annotations
 
 from mlab.construct import Builder, Fixed, Slide, Spring, Submission
-from mlab.construct.ir import GoalDimIR, KnobIR, OutcomeIR, PhaseIR, SetupIR, TaskIR
+from mlab.construct.ir import GoalDimIR, KnobIR, ModifiableIR, OutcomeIR, PhaseIR, SetupIR, TaskIR
 
 
 def build_device(shift: float = 0.3) -> Builder:
@@ -28,7 +28,7 @@ def build_device(shift: float = 0.3) -> Builder:
     return b
 
 
-def build_task(goal: tuple[float, float] = (0.5, 0.7), tolerance: float = 0.02) -> TaskIR:
+def build_task(goal: tuple[float, float] = (0.55, 0.68), tolerance: float = 0.015) -> TaskIR:
     return TaskIR(
         title="Launch the ball onto a landing spot",
         goal_text="Compress the plunger, then release the trigger so the ball rolls off the "
@@ -42,6 +42,7 @@ def build_task(goal: tuple[float, float] = (0.5, 0.7), tolerance: float = 0.02) 
         goal_space=[GoalDimIR(low=goal[0], high=goal[1])],
         tolerance=tolerance,
         budget=40,
+        modifiable=[ModifiableIR(part="ball", field="posx", low=0.045, high=0.1)],
     )
 
 

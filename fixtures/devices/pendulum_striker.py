@@ -39,8 +39,8 @@ def build_device(head_mass: tuple[float, float] = (0.5, 2.5)) -> Builder:
 
 
 def build_task(
-    goal: tuple[float, float] = (-0.1, 0.28),
-    tolerance: float = 0.03,
+    goal: tuple[float, float] = (0.05, 0.3),
+    tolerance: float = 0.025,
     goal_text: str | None = None,
     knob_range: tuple[float, float] = (0.2, 1.3),
 ) -> TaskIR:
@@ -58,7 +58,7 @@ def build_task(
         goal_space=[GoalDimIR(low=goal[0], high=goal[1])],
         tolerance=tolerance,
         budget=40,
-        modifiable=[ModifiableIR(part="arm", field="size1", low=0.2, high=0.28)],
+        modifiable=[ModifiableIR(part="block", field="posx", low=-0.232, high=-0.19)],
     )
 
 
