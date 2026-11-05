@@ -12,7 +12,9 @@ Children inherit the profile, so the agent CLI's shell tools and MCP servers are
 
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -43,14 +45,24 @@ def _q(p: Path | str) -> str:
     return '"' + real(p).replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def snapshot_agent_history(exclude_substrings: list[str]) -> list[Path]:
-    """Existing CLI chat/project dirs at launch time, i.e. other sessions' records."""
+def cli_slug(path: Path) -> str:
+    """Project directory name the agent CLI derives from a workspace path."""
+    return re.sub(r"[^A-Za-z0-9-]", "", str(path).strip("/").replace("/", "-"))
+
+
+def cli_chat_dir(path: Path) -> str:
+    """Chat store directory name: md5 of the workspace path (verified for cursor-agent)."""
+    return hashlib.md5(str(path).encode()).hexdigest()
+
+
+def snapshot_agent_history(own_workspace: Path) -> list[Path]:
+    """Existing CLI chat/project dirs at launch time except the agent's own: these hold the
+    other agent's (and other projects') session records."""
+    own = {cli_slug(own_workspace), cli_chat_dir(own_workspace)}
     out: list[Path] = []
     for base in (HOME / ".cursor" / "chats", HOME / ".cursor" / "projects"):
         if base.is_dir():
-            for child in base.iterdir():
-                if child.is_dir() and not any(s in child.name for s in exclude_substrings):
-                    out.append(child)
+            out += [c for c in base.iterdir() if c.is_dir() and c.name not in own]
     return out
 
 

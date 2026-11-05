@@ -4,7 +4,6 @@ explicit files in the agent's workspace are its only memory."""
 from __future__ import annotations
 
 import json
-import re
 import shutil
 import stat
 import tempfile
@@ -29,11 +28,6 @@ LEARNER_NUDGE = ("Your session is not finished: `./lab status` is not 'done' yet
                  "protocol from where you are and finish it.")
 BUILDER_NUDGE = ("No submission was found in outbox/. Finish the design, make `./forge check "
                  "device.py` pass, and run `./forge submit device.py`.")
-
-
-def cli_slug(path: Path) -> str:
-    """The directory name agent CLIs derive from a workspace path."""
-    return re.sub(r"[^A-Za-z0-9-]", "", str(path).strip("/").replace("/", "-"))
 
 
 def _install_script(dst: Path, python: Path, body: str) -> None:
@@ -93,7 +87,7 @@ class LLMLearner:
         tmp = Path(tempfile.mkdtemp(prefix="mlab-tmp-"))
         try:
             python = self._prepare(tag, server)
-            history = snapshot_agent_history([cli_slug(self.workspace)])
+            history = snapshot_agent_history(self.workspace)
             profile = learner_policy(self.run_root, self.workspace, tmp, history).write(
                 self.profiles / f"learner_{tag}.sb")
             env = agent_env(self.workspace, tmp, [self.workspace, python.parent])
@@ -161,7 +155,7 @@ class LLMBuilder:
         out.unlink(missing_ok=True)
         tmp = Path(tempfile.mkdtemp(prefix="mlab-tmp-"))
         try:
-            history = snapshot_agent_history([cli_slug(ws)])
+            history = snapshot_agent_history(ws)
             profile = builder_policy(self.run_root, ws, tmp, history).write(
                 self.profiles / f"builder_call{self.calls:02d}.sb")
             env = agent_env(ws, tmp, [ws, python.parent])
