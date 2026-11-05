@@ -28,6 +28,8 @@ from mlab.referee.report import build_report
 from mlab.referee.session import LearnerSession
 from mlab.referee.theory_eval import build_query_sets, modification_effect, run_theory, score
 from mlab.referee.theta import hidden_priors, twin_instances
+from mlab.sandbox.audit import make_canary, scan_tree
+from mlab.sandbox.policies import ensure_learner_venv
 
 PROFILES = {"full": FULL, "fast": FAST, "test": TEST}
 
@@ -59,6 +61,11 @@ class RunConfig:
     act_noise: float = 0.005
     runs_dir: Path = field(default_factory=default_runs_dir)
     blackbox_control: bool = True
+    sandbox_theories: bool = False
+
+    @property
+    def root(self) -> Path:
+        return Path(self.runs_dir) / self.run_id
 
 
 @dataclass
@@ -67,7 +74,8 @@ class RunDirs:
 
     def __post_init__(self) -> None:
         for sub in ("referee/submissions", "referee/certificates", "referee/sessions",
-                    "builder", "learner", "public/cards", "public/reports"):
+                    "referee/transcripts", "referee/profiles", "builder", "learner",
+                    "public/cards", "public/reports"):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
 
     @property
@@ -92,10 +100,18 @@ def _signature(sub: Submission) -> str:
     return json.dumps([[(k.name, k.low, k.high) for k in t.knobs], t.outcome.model_dump()])
 
 
-def _hit_rate(code: str | None, qs, tol: float) -> float | None:
-    if code is None or not qs.queries:
-        return None
-    return score(qs, run_theory(code, qs.queries), tol).hit_rate
+class TheoryRunner:
+    def __init__(self, sandboxed: bool):
+        self.sandboxed = sandboxed
+        self.python = str(ensure_learner_venv()) if sandboxed else None
+
+    def __call__(self, code: str, queries: list[dict]) -> list | None:
+        return run_theory(code, queries, python=self.python, sandboxed=self.sandboxed)
+
+    def hit_rate(self, code: str | None, qs, tol: float) -> float | None:
+        if code is None or not qs.queries:
+            return None
+        return score(qs, self(code, qs.queries), tol).hit_rate
 
 
 class Orchestrator:
@@ -111,9 +127,14 @@ class Orchestrator:
             np.random.default_rng(s) for s in seeds
         )
         self.world = sample_world(self.rng_world)
-        _write(self.dirs.referee / "secrets.json", {"seed": config.seed, "world": self.world})
+        self.canaries = {role: make_canary(role) for role in ("referee", "builder", "learner")}
+        _write(self.dirs.referee / "secrets.json", {"seed": config.seed, "world": self.world,
+                                                    "canary": self.canaries["referee"]})
+        (self.dirs.root / "builder" / ".canary").write_text(self.canaries["builder"])
+        (self.dirs.root / "learner" / ".canary").write_text(self.canaries["learner"])
         self.channel = ChannelLog(self.dirs.public / "channel.jsonl")
         self.profile = PROFILES[config.profile]
+        self.theory = TheoryRunner(config.sandbox_theories)
 
     def _referee_gate(self, r: int, attempt: int, sub: Submission, thetas: list[dict]) -> Certificate:
         secrets = [v for th in thetas for k, v in th.items() if k in hidden_priors(sub.device)]
@@ -137,7 +158,7 @@ class Orchestrator:
             "theory_sha": _sha(rec.theory_code or ""), "tickets": [t.model_dump() for t in rec.tickets],
         })
         qsets = build_query_sets(sub, dev, [x.knobs for x in rec.lab], self.rng_eval)
-        scores = [score(q, run_theory(rec.theory_code, q.queries), sub.task.tolerance)
+        scores = [score(q, self.theory(rec.theory_code, q.queries), sub.task.tolerance)
                   if rec.theory_code else score(q, None, sub.task.tolerance) for q in qsets]
         metrics = compute_metrics(label, sess, scores, hidden_priors(sub.device), theta)
         return sess, qsets, metrics, seconds
@@ -189,16 +210,17 @@ class Orchestrator:
             sess_b, qs_b, m_b, sec_b = self._session("B", sub, devs[1], thetas[1], card, twin)
             tol = sub.task.tolerance
             code_a, code_b = sess_a.record.theory_code, sess_b.record.theory_code
+            hr = self.theory.hit_rate
             swap: dict = {
-                "A_on_A": _hit_rate(code_a, qs_a[0], tol), "B_on_B": _hit_rate(code_b, qs_b[0], tol),
-                "A_on_B": _hit_rate(code_a, qs_b[0], tol), "B_on_A": _hit_rate(code_b, qs_a[0], tol),
+                "A_on_A": hr(code_a, qs_a[0], tol), "B_on_B": hr(code_b, qs_b[0], tol),
+                "A_on_B": hr(code_a, qs_b[0], tol), "B_on_A": hr(code_b, qs_a[0], tol),
             }
             if not sub.device.hidden:
                 swap["note"] = ("not informative: the device has no device-specific hidden "
                                 "quantity, so both instances share identical physics")
             old = None
             if prev_theory is not None and prev_sub is not None and _signature(prev_sub) == _signature(sub):
-                old = _hit_rate(prev_theory, qs_a[0], tol)
+                old = hr(prev_theory, qs_a[0], tol)
             controls: dict = {"modification_effect_over_tol": modification_effect(sub, devs[0], self.rng_ctrl)}
             if self.cfg.blackbox_control:
                 ctrl = LearnerSession(sub, devs[0], card, self.rng_ctrl, self.cfg.act_noise)
@@ -232,9 +254,23 @@ class Orchestrator:
                      f"controls {controls}")
             prev_sub, prev_theory = sub, code_a
         summary = {"run_id": self.cfg.run_id, "builder": self.builder.name,
-                   "learner": self.learner.name, "profile": self.cfg.profile, "rounds": rounds}
+                   "learner": self.learner.name, "profile": self.cfg.profile, "rounds": rounds,
+                   "isolation_audit": self.audit()}
+        for agent, key in ((self.builder, "builder_sessions"), (self.learner, "learner_sessions")):
+            if hasattr(agent, "history"):
+                summary[key] = agent.history
         _write(self.dirs.referee / "summary.json", summary)
         return summary
+
+    def audit(self) -> dict:
+        """Canaries planted in each private area must not appear in the other agent's files."""
+        transcripts = self.dirs.referee / "transcripts"
+        learner_side = [self.dirs.root / "learner", *transcripts.glob("learner_*.jsonl")]
+        builder_side = [self.dirs.root / "builder", *transcripts.glob("builder_*.jsonl")]
+        learner_hits = scan_tree(learner_side, [self.canaries["referee"], self.canaries["builder"]])
+        builder_hits = scan_tree(builder_side, [self.canaries["referee"], self.canaries["learner"]])
+        return {"learner_side_hits": learner_hits, "builder_side_hits": builder_hits,
+                "clean": not learner_hits and not builder_hits}
 
 
 def offline_learner(seed: int) -> ScriptedAgent:
