@@ -71,3 +71,19 @@
     - `mlab verify-log`：15 条记录完整。
 - 遗留问题：参照课程太容易被暴力拟合，这正是需要 LLM 建造者去升级的地方，不再继续调整参照课程。
 - 下一步：M3，沙箱、RPC、`lab` 与 `forge` CLI、cursor-agent 后端、冻结 prompt。
+
+## 2026-11-06 01:30 M3 隔离与 LLM 运行时
+- 做了什么：
+  - `mlab/sandbox`：按角色生成的 Seatbelt 策略（学习者、建造者、建造者代码、理论执行器），分层渲染；自检 27 项；canary 审计。
+  - `mlab/referee/rpc.py`：Unix socket JSON RPC，带能力令牌和学习者方法白名单，错误信息经过净化。
+  - `mlab/cli/lab.py`（只用标准库）、`mlab/cli/forge.py`（文档从目录和阈值动态生成）。
+  - `mlab/agents/backend.py`（cursor-agent，stream-json）；`mlab/agents/llm.py`（LLMBuilder、LLMLearner，含 fork、同一会话内的催促、按快照禁读其他会话）。
+  - 冻结 prompt，`hashes.json` 中记录冻结时间为“2026-11-06，尚未产生任何 LLM 装置之前”。
+- 实测发现并处理的问题：
+  1. 规则顺序：宽泛的写放行（`~/.cursor`）写在禁令之后，覆盖了对旧会话和 `plans` 的禁读。改为分层渲染。
+  2. 沙箱内的 Python 导入失败：可编辑安装的 `.pth` 指向被禁读的项目目录，导入机制扫描时抛出 PermissionError，而不是忽略。学习者和理论执行器改用独立的 venv（`~/.local/share/mlab/learner-venv`），里面不含 mlab；工作目录也必须设为自己的工作区。
+  3. cursor-agent 的 shell 工具在执行前会逐级解析工作目录的符号链接，而祖先目录被禁读。改为对工作区的祖先链只放行 `file-read-metadata`（literal），不放行列目录和读内容。
+  4. Node 启动时会 stat 标准输入输出；若 stdout 重定向到被禁读目录下的文件，进程会直接 abort。改为管道输出，由编排器进程写入会话记录。
+  5. 用 `nohup … &` 在一次性 shell 调用中启动长任务，编排器会被一起清理，cursor-agent 成为孤儿，写满 64KB 管道后阻塞。改用工具的后台模式运行。
+- 验证：`mlab selftest` 27/27 通过；在沙箱内由 cursor-agent 实测，读自己的工作区成功，读 `../referee/secret.txt` 返回 Operation not permitted；`pytest` 47 passed。
+- 进行中：真实 LLM 冒烟运行 `llm-smoke-1`（1 轮，composer-2.5）。

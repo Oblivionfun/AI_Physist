@@ -7,6 +7,7 @@ import json
 import os
 import signal
 import subprocess
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,6 +41,13 @@ def agent_env(workspace: Path, tmpdir: Path, extra_path: list[Path]) -> dict[str
         "TMPDIR": str(tmpdir) + "/",
         "PWD": str(workspace),
     }
+
+
+def _pump(stream, path: Path) -> None:
+    with path.open("ab") as f:
+        for chunk in iter(lambda: stream.readline(), b""):
+            f.write(chunk)
+            f.flush()
 
 
 def parse_stream(transcript: Path) -> tuple[str | None, str, int, dict]:
@@ -80,18 +88,28 @@ class CursorAgentBackend:
         transcript.parent.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         timed_out = False
-        with transcript.open("a") as out, (transcript.with_suffix(".stderr")).open("a") as err:
-            proc = subprocess.Popen(wrap(profile, cmd), cwd=workspace, env=env, stdout=out,
-                                    stderr=err, start_new_session=True)
+        # The agent's stdio must be pipes: its runtime stats stdio at start-up, and a file in a
+        # directory the sandbox denies (the referee area) makes it abort.
+        proc = subprocess.Popen(wrap(profile, cmd), cwd=workspace, env=env, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, start_new_session=True)
+        pumps = [
+            threading.Thread(target=_pump, args=(proc.stdout, transcript), daemon=True),
+            threading.Thread(target=_pump, args=(proc.stderr, transcript.with_suffix(".stderr")),
+                             daemon=True),
+        ]
+        for p in pumps:
+            p.start()
+        try:
+            code = proc.wait(timeout=self.timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            os.killpg(proc.pid, signal.SIGTERM)
             try:
-                code = proc.wait(timeout=self.timeout)
+                code = proc.wait(timeout=30)
             except subprocess.TimeoutExpired:
-                timed_out = True
-                os.killpg(proc.pid, signal.SIGTERM)
-                try:
-                    code = proc.wait(timeout=30)
-                except subprocess.TimeoutExpired:
-                    os.killpg(proc.pid, signal.SIGKILL)
-                    code = proc.wait()
+                os.killpg(proc.pid, signal.SIGKILL)
+                code = proc.wait()
+        for p in pumps:
+            p.join(timeout=10)
         session_id, final, tools, usage = parse_stream(transcript)
         return AgentResult(code, time.time() - t0, session_id, final, timed_out, tools, usage)
