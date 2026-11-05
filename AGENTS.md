@@ -16,7 +16,8 @@ mlab/catalog     零件、材料、隐藏物性先验；采样 theta_world
 mlab/construct   构造 IR、逐步校验、自然语言描述、编译为 MJCF
 mlab/sim         按动作程序运行仿真、加噪声、计算结果量
 mlab/referee     证书、会话协议、考试、理论评测、说明书、泄漏扫描、报告、信道日志
-mlab/agents      Agent 后端（cursor-agent / codex / scripted）与冻结的 prompt
+mlab/agents      Agent 后端（cursor-agent / codex）、冻结的 prompt、
+                 builders/（脚本参照建造者）、learners/（与装置无关的脚本学习者）
 mlab/sandbox     沙箱策略、自检、canary 审计
 mlab/cli         forge（建造者工具）、lab（学习者客户端，只用标准库）、mlab（编排入口）
 mlab/analysis    作图、回放、demo 报告
@@ -31,7 +32,7 @@ tests/           pytest
 
 ## 2. 红线（违反即视为 bug）
 
-1. `mlab/agents/` 与学习者 prompt 中，不得出现任何具体装置名、装置专属的分支或物理常数。脚本学习者必须与装置无关，只能使用任务卡里的公开信息。
+1. 学习者侧代码（`mlab/agents/learners/`、`mlab/cli/lab.py`）与学习者 prompt 中，不得出现任何具体装置名、装置专属的分支或物理常数。脚本学习者必须与装置无关，只能使用任务卡里的公开信息。脚本参照建造者（`mlab/agents/builders/`）可以包含装置设计，但只用于离线复现，不得作为 demo 的建造者。
 2. 禁止编排失败：任何“故意无解的初稿”“预设好的失败”都不允许。demo 里的失败必须来自真实运行。
 3. 所有评测指标都由裁判用真值独立计算。Agent 自报的数字只作为被检验的对象，不得钳制或改写指标。
 4. 学习者的 prompt 和工具在任何装置产生之前冻结，并把哈希写入 `mlab/agents/prompts/hashes.json`；之后修改必须登记决策并重新计算哈希。
