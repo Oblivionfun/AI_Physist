@@ -1,0 +1,34 @@
+[project]
+name = "mlab"
+version = "0.1.0"
+description = "Isolated builder/learner agents around MuJoCo devices with a trusted referee."
+requires-python = ">=3.12"
+dependencies = [
+    "mujoco>=3.3",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "pydantic>=2.7",
+    "matplotlib>=3.9",
+]
+
+[project.scripts]
+mlab = "mlab.cli.main:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mlab"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: long-running certification or end-to-end tests"]
+addopts = "-m 'not slow'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
