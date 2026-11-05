@@ -20,6 +20,7 @@ from mlab.construct.compile import CompiledDevice, compile_device
 from mlab.construct.ir import Submission
 from mlab.construct.modify import apply_modification, mod_key, visible_params
 from mlab.referee.oracle import usable
+from mlab.sandbox.policies import theory_policy, wrap
 from mlab.sim.runner import simulate
 
 RUNNER = """\
@@ -60,14 +61,14 @@ class TheoryScore:
 
 
 def run_theory(code: str, queries: list[dict], python: str | None = None,
-               wrapper: list[str] | None = None, timeout: float = 120.0) -> list | None:
+               sandboxed: bool = False, timeout: float = 120.0) -> list | None:
     with tempfile.TemporaryDirectory(prefix="mlab_theory_") as tmp:
         tmp_path = Path(tmp)
         (tmp_path / "predict.py").write_text(code)
         (tmp_path / "runner.py").write_text(RUNNER)
         cmd = [python or sys.executable, "-I", str(tmp_path / "runner.py"), str(tmp_path / "predict.py")]
-        if wrapper:
-            cmd = wrapper + cmd
+        if sandboxed:
+            cmd = wrap(theory_policy(tmp_path).write(tmp_path / "theory.sb"), cmd)
         try:
             proc = subprocess.run(cmd, input=json.dumps(queries), capture_output=True, text=True,
                                   timeout=timeout, cwd=tmp, check=False)
