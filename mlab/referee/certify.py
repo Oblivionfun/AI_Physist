@@ -62,8 +62,10 @@ class CertProfile:
     reference_instances: int = 1
     reference_max_keys: int = 4
     reference_fit: FitBudget = field(default_factory=FitBudget)
-    coverage_goals: int = 64
+    coverage_goals: int = 256
     physics_samples: int = 3
+    prior_draws: int = 24
+    goals_per_draw: int = 4
 
 
 FULL = CertProfile()
@@ -78,8 +80,9 @@ FAST = CertProfile(
     reference_max_keys=3,
     reference_fit=FitBudget(search_points=16, search_subset=8, fit_subset=12, refine_starts=1,
                             refine_evals=24),
-    coverage_goals=48,
+    coverage_goals=256,
     physics_samples=2,
+    prior_draws=16,
 )
 TEST = CertProfile(
     n_instances=2,
@@ -92,8 +95,9 @@ TEST = CertProfile(
     reference_max_keys=2,
     reference_fit=FitBudget(search_points=8, search_subset=6, fit_subset=8, refine_starts=1,
                             refine_evals=12),
-    coverage_goals=32,
+    coverage_goals=256,
     physics_samples=1,
+    prior_draws=8,
 )
 
 
@@ -307,11 +311,10 @@ class Certifier:
         nominal = nominal_instance(self.device)
         oracle = GenericOracle(compile_device(self.device, nominal), self.task, self.rng,
                                self.p.table_per_dim, self.p.refine_evals)
-        n_goals = len(self.solutions[0])
         k = n = 0
-        for _ in range(self.p.n_instances):
+        for _ in range(self.p.prior_draws):
             dev = compile_device(self.device, prior_instance(self.world, self.device, self.rng))
-            for goal in _goals(self.task, n_goals, self.rng):
+            for goal in _goals(self.task, self.p.goals_per_draw, self.rng):
                 k += self._eval(dev, oracle.solve(goal), goal, 1)
                 n += 1
         run_k = run_n = 0

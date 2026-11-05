@@ -27,6 +27,7 @@ from mlab.construct.geometry import (
     shape_volume,
 )
 from mlab.construct.ir import DeviceIR, PartIR, TaskIR
+from mlab.construct.modify import apply_modification, current_value
 
 MIN_HALF_SIZE = 0.005
 MAX_HALF_SIZE = 2.0
@@ -432,8 +433,27 @@ def check_task(device: DeviceIR, task: TaskIR) -> list[Issue]:
     if not (BUDGET_RANGE[0] <= task.budget <= BUDGET_RANGE[1]):
         issues.append(Issue("budget", f"budget {task.budget} outside {BUDGET_RANGE}"))
     for mod in task.modifiable:
+        key = f"{mod.part}.{mod.field}"
         if not device.has_part(mod.part):
             issues.append(Issue("modifiable", f"modifiable part '{mod.part}' does not exist"))
-        elif not mod.low < mod.high:
-            issues.append(Issue("modifiable", f"modifiable '{mod.part}.{mod.field}': low < high"))
+            continue
+        if mod.field.startswith("size") and int(mod.field[-1]) >= len(device.part(mod.part).shape.size):
+            issues.append(Issue("modifiable", f"modifiable '{key}': shape has no such size index"))
+            continue
+        if not mod.low < mod.high:
+            issues.append(Issue("modifiable", f"modifiable '{key}': low must be below high"))
+            continue
+        now = current_value(device, mod)
+        if not (mod.low - 1e-9 <= now <= mod.high + 1e-9):
+            issues.append(Issue("modifiable", f"modifiable '{key}': current value {now:.4f} is "
+                                f"outside [{mod.low}, {mod.high}]"))
+        for value in (mod.low, mod.high):
+            bad = check_device_static(apply_modification(device, mod, value))
+            if not bad:
+                compiled = compile_device(apply_modification(device, mod, value),
+                                          nominal_theta(device))
+                bad = check_contacts(compiled)
+            if bad:
+                issues.append(Issue("modifiable", f"modifiable '{key}' = {value}: the modified "
+                                    f"device is invalid ({bad[0].message}); narrow the range"))
     return issues

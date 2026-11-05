@@ -25,6 +25,18 @@ def instance_theta(world: dict[str, float], device: DeviceIR, rng: np.random.Gen
     return theta
 
 
+def twin_instances(world: dict[str, float], device: DeviceIR,
+                   rng: np.random.Generator) -> list[dict[str, float]]:
+    """Two instances whose device-specific unknowns are antithetic (half a prior width apart
+    in unit coordinates), so the swap test always compares genuinely different devices."""
+    a, b = dict(world), dict(world)
+    for h in device.hidden:
+        u = float(rng.uniform())
+        a[h.name] = h.from_unit(u)
+        b[h.name] = h.from_unit((u + 0.5) % 1.0)
+    return [a, b]
+
+
 def prior_instance(world: dict[str, float], device: DeviceIR, rng: np.random.Generator) -> dict[str, float]:
     """A hypothetical instance with every relevant unknown redrawn from its prior."""
     theta = dict(world)
