@@ -1,0 +1,94 @@
+{
+  "round": 3,
+  "device_version": 3,
+  "certificate": [
+    "C* recorded certificate: PASS. certified in run demo-1, attempt 1"
+  ],
+  "reference_learner_success": 0.75,
+  "oracle_success": 0.9791666666666666,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        2.3525515252657163,
+        8.946310789734891
+      ],
+      "probe_errors_over_tol": [
+        76.07629414012455,
+        4.540271915490557,
+        4.098365430641404,
+        0.8359317726497154,
+        3.9107163049964346,
+        0.2502479494858693
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.625,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.072": 0.0,
+        "modified striker.posz=0.7308": 0.375
+      },
+      "non_discriminating_tests": [
+        "modified striker.posz=0.7308"
+      ],
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        4.93325553801148,
+        2.7429713340257114
+      ],
+      "probe_errors_over_tol": [
+        3.440928764130898,
+        2.6353049499412324,
+        2.8035644954615506,
+        7.975919495709286,
+        2.950045661466218,
+        2.081280494288962
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.75,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.072": 0.375,
+        "modified striker.posz=0.7308": 0.375
+      },
+      "non_discriminating_tests": [
+        "modified stop_post.posx=-0.072",
+        "modified striker.posz=0.7308"
+      ],
+      "failure_tags": [
+        "budget_exhausted"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.0,
+  "swap_test": {
+    "A_on_A": 0.625,
+    "B_on_B": 0.75,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": 0.0,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 0.0,
+      "striker.posz": 1.7185414117823021
+    },
+    "blackbox_exam_success": 0.625
+  },
+  "tickets": [],
+  "guidance": "Learner exam success 100% is above the target band 30%-80%: the next version should be harder in a new dimension. Modifiable 'stop_post.posx' moved outcomes by only 0.00 x tolerance at the tested value, so ignoring it scores as well as modelling it: choose a range where it stays consequential, or drop it."
+}

@@ -1,0 +1,95 @@
+{
+  "round": 3,
+  "device_version": 3,
+  "certificate": [
+    "C* recorded certificate: PASS. certified in run demo-1, attempt 1"
+  ],
+  "reference_learner_success": 0.75,
+  "oracle_success": 0.9791666666666666,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 0.25,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        3.9904040742733446,
+        3.601485276869628
+      ],
+      "probe_errors_over_tol": [
+        96.55152645714223,
+        3.212080129390939,
+        0.6130183002795719,
+        0.3206295999798603,
+        11.745930727118825,
+        3.312134252103527
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.125,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.072": 0.0,
+        "modified striker.posz=0.7308": 0.125
+      },
+      "non_discriminating_tests": [
+        "modified striker.posz=0.7308"
+      ],
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 0.625,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        2.225611688718078,
+        1.7236421373179969
+      ],
+      "probe_errors_over_tol": [
+        5.911950074559885,
+        12.565571513349823,
+        3.1041008353266117,
+        46.063173536711986,
+        10.487645454504674,
+        10.909878836245307
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.125,
+        "extrapolation": 0.125,
+        "modified stop_post.posx=-0.072": 0.125,
+        "modified striker.posz=0.7308": 0.125
+      },
+      "non_discriminating_tests": [
+        "modified stop_post.posx=-0.072",
+        "modified striker.posz=0.7308"
+      ],
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.24609375,
+  "swap_test": {
+    "A_on_A": 0.125,
+    "B_on_B": 0.125,
+    "A_on_B": 0.25,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": 0.125,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 0.0,
+      "striker.posz": 1.7185414117823021
+    },
+    "blackbox_exam_success": 0.625
+  },
+  "tickets": [],
+  "guidance": "Learner exam success 44% is inside the target band. Modifiable 'stop_post.posx' moved outcomes by only 0.00 x tolerance at the tested value, so ignoring it scores as well as modelling it: choose a range where it stays consequential, or drop it."
+}

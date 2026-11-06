@@ -1,0 +1,93 @@
+{
+  "round": 1,
+  "device_version": 1,
+  "certificate": [
+    "C* recorded certificate: PASS. certified in run demo-1, attempt 1"
+  ],
+  "reference_learner_success": 1.0,
+  "oracle_success": 1.0,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 80,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        1.5810453911226325,
+        0.4414759674136909
+      ],
+      "probe_errors_over_tol": [
+        2.0022956638947678,
+        9.041470533314122,
+        3.1829159926012256,
+        0.4614128198885484,
+        0.5645526956911421,
+        0.48595401531731464,
+        0.5511798039019699,
+        0.5852136621212373
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.375,
+        "modified slug.posz=0.734": 0.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "modification_fail"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 80,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        5.0461116709653355,
+        0.5846716991976596
+      ],
+      "probe_errors_over_tol": [
+        14.851971307294999,
+        0.34641080792309514,
+        0.054215415263435644,
+        0.6205657137875646,
+        4.46859462235043,
+        1.1289656075181076,
+        0.07830071414617637,
+        1.4957345778171154
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.875,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.5,
+        "modified slug.posz=0.734": 0.75
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.0,
+  "swap_test": {
+    "A_on_A": 1.0,
+    "B_on_B": 0.875,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 3.198663514581333,
+      "slug.posz": 2.46244834474315
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [],
+  "guidance": "Learner exam success 100% is above the target band 30%-80%: the next version should be harder in a new dimension. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions)."
+}

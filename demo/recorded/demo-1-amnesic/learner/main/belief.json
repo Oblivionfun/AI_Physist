@@ -1,0 +1,17 @@
+{
+  "estimates": {
+    "damping.bearing": {"value": 0.004, "low": 0.002, "high": 0.009},
+    "damping.rail": {"value": 0.45, "low": 0.135, "high": 0.765},
+    "friction.concrete": {"value": 0.65, "low": 0.425, "high": 0.875},
+    "friction.steel": {"value": 0.30, "low": 0.165, "high": 0.435},
+    "friction.wood": {"value": 0.45, "low": 0.27, "high": 0.63},
+    "frictionloss.bearing": {"value": 0.0012, "low": 0.0005, "high": 0.0027},
+    "frictionloss.rail": {"value": 0.225, "low": 0.0675, "high": 0.3825},
+    "gain.motor_large": {"value": 3.26, "low": 2.8, "high": 3.8},
+    "rolling.concrete": {"value": 0.00085, "low": 0.000265, "high": 0.001435},
+    "rolling.steel": {"value": 0.00085, "low": 0.000265, "high": 0.001435},
+    "stiffness.torsion_soft": {"value": 0.67, "low": 0.5, "high": 0.95},
+    "ball_mass": {"value": 0.022, "low": 0.02, "high": 0.04},
+    "slug_mass": {"value": 0.083, "low": 0.06, "high": 0.11}
+  }
+}

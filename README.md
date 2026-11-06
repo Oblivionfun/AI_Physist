@@ -16,8 +16,8 @@
 ```bash
 uv sync                      # 安装 mlab 及依赖（mujoco、numpy、scipy、pydantic、matplotlib）
 uv run mlab selftest         # 沙箱自检；首次运行会创建学习者专用 venv（不含 mlab）
-uv run pytest -q             # 默认测试集，约 20 s
-uv run pytest -q -m slow     # FULL 认证元评测，约 4 min
+uv run pytest -q             # 默认测试集，约 1 min
+uv run pytest -q -m slow     # FULL 认证元评测，约 10 min
 ```
 
 ## 运行
@@ -51,6 +51,17 @@ uv run mlab rerun-learner demo --run-id demo-scripted --learner scripted        
 uv run python -m mlab.analysis.demo_report demo     # 写入 demo/recorded/demo/
 ```
 
+## 已录制的演示
+
+| 目录 | 内容 |
+| --- | --- |
+| [`demo/recorded/demo-1/`](demo/recorded/demo-1/index.md) | 正式演示：建造者 claude-opus-5-thinking-high，学习者 gpt-5.6-sol-high，3 轮 |
+| [`demo/recorded/demo-1-weak/`](demo/recorded/demo-1-weak/index.md) | 对照：同样的装置和实例，学习者换成 gpt-5.3-codex |
+| [`demo/recorded/demo-1-amnesic/`](demo/recorded/demo-1-amnesic/index.md) | 对照：同一强模型，每次会话前清空笔记 |
+| [`demo/recorded/llm-learner-smoke/`](demo/recorded/llm-learner-smoke/index.md) | 补充：参照装置上的 LLM 学习者冒烟运行 |
+
+每份演示包含时间线、图表、MuJoCo 回放动画，以及建造者的设计日志和学习者的笔记、理论代码。结论汇总见 [`DESIGN.md`](DESIGN.md) 第 3 节。
+
 运行目录：`~/mlab-runs/<run_id>/`（可用 `MLAB_RUNS_DIR` 覆盖）。
 
 | 目录 | 内容 | 谁能访问 |
@@ -70,6 +81,8 @@ mlab/referee     证书 C0-C3、会话协议、说明书、泄漏扫描、RPC、
 mlab/agents      cursor-agent 后端、LLM 建造者/学习者、冻结 prompt、脚本学习者、参照建造者
 mlab/sandbox     Seatbelt 策略、自检、canary 审计
 mlab/cli         mlab（编排）、forge（建造者工具）、lab（学习者客户端，只用标准库）
+mlab/analysis    演示报告、MuJoCo 回放、会话记录摘要
 fixtures/        带标签的合格/作弊装置（裁判元评测）
+scripts/diagnostics  运维诊断：C3 参考学习者方差、从会话记录还原编辑、在已录制世界中重新认证
 tests/           pytest
 ```

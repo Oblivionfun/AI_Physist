@@ -1,0 +1,87 @@
+{
+  "round": 1,
+  "device_version": 1,
+  "certificate": [
+    "C* recorded certificate: PASS. certified in run demo-1, attempt 1"
+  ],
+  "reference_learner_success": 1.0,
+  "oracle_success": 1.0,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 0.375,
+      "experiments_used": 62,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        3.550769000738341,
+        0.8706603290291482
+      ],
+      "probe_errors_over_tol": [
+        0.773204754803865,
+        0.06892507876866784,
+        0.019884418434301665,
+        0.20935121857768427,
+        1.0754162780452765,
+        0.6996432393181383
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.25,
+        "extrapolation": 0.125,
+        "modified stop_post.posx=-0.064": 0.25,
+        "modified slug.posz=0.734": 0.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.3333333333333333,
+      "exam_success": 0.75,
+      "experiments_used": 30,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        2.7844618777630648,
+        0.5568506655647938
+      ],
+      "probe_errors_over_tol": [
+        16.84312603365872,
+        1.3032668019231217,
+        0.6228607411183776
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.5,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.375,
+        "modified slug.posz=0.734": 0.25
+      },
+      "non_discriminating_tests": [
+        "modified stop_post.posx=-0.064"
+      ],
+      "failure_tags": [
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.24609375,
+  "swap_test": {
+    "A_on_A": 0.25,
+    "B_on_B": 0.5,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 3.198663514581333,
+      "slug.posz": 2.46244834474315
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [],
+  "guidance": "Learner exam success 56% is inside the target band. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions)."
+}
