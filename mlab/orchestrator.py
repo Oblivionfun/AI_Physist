@@ -73,7 +73,7 @@ class RunDirs:
     root: Path
 
     def __post_init__(self) -> None:
-        for sub in ("referee/submissions", "referee/certificates", "referee/sessions",
+        for sub in ("referee/submissions", "referee/certificates", "referee/sessions", "referee/instances",
                     "referee/transcripts", "referee/profiles", "builder", "learner",
                     "public/cards", "public/reports"):
             (self.root / sub).mkdir(parents=True, exist_ok=True)
@@ -204,6 +204,7 @@ class Orchestrator:
                 continue
 
             version += 1
+            _write(self.dirs.referee / "instances" / f"r{r}.json", {"A": thetas[0], "B": thetas[1]})
             card = build_card(sub, version, changelog(prev_sub, sub))
             _write(self.dirs.public / "cards" / f"v{version}.json", card.model_dump())
             self.channel.append(5, "task_card", {"version": version, "changelog": card.changelog,
