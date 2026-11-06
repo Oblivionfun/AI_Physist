@@ -65,7 +65,7 @@ def unknown_specs(sub: Submission) -> list[UnknownSpec]:
                                  unit=p.unit))
     for h in sub.device.hidden:
         specs.append(UnknownSpec(name=h.name, description=h.description or "device-specific",
-                                 low=h.low, high=h.high, unit=h.unit))
+                                 low=h.low, high=h.high, unit=h.unit, scope="device"))
     return specs
 
 
@@ -75,8 +75,10 @@ def build_card(sub: Submission, version: int, changelog: list[str] | None = None
     manual = describe_device(device)
     manual += (
         "\nPhysics: rigid bodies with soft contacts, gravity 9.81 m/s^2 along -z. Contact "
-        "friction between two surfaces is the larger of their two coefficients. Parts made of "
-        "the same material share the same (unknown) friction everywhere in this world."
+        "friction between two surfaces is the larger of their two coefficients. Unknowns of scope "
+        "'world' are properties of a material or of a catalog part model (bearing, rail, spring, "
+        "motor type): they are identical in every device and every instance in this world. "
+        "Unknowns of scope 'device' belong to this device and are drawn anew for every instance."
     )
     if task.setup:
         manual += "\nBefore each run: " + "; ".join(

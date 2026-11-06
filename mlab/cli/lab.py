@@ -114,7 +114,8 @@ def main(argv=None):
         if card["unknowns"]:
             print("Unknown quantities (datasheet ranges):")
             for u in card["unknowns"]:
-                print(f"  {u['name']}: {u['description']}, between {u['low']} and {u['high']} {u['unit']}")
+                print(f"  {u['name']} [scope: {u.get('scope', 'world')}]: {u['description']}, "
+                      f"between {u['low']} and {u['high']} {u['unit']}")
         if card["modifiable"]:
             print("Modifiable visible dimensions (keys of `visible` in predict):")
             for m in card["modifiable"]:

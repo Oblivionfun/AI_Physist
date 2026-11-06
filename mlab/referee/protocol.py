@@ -31,6 +31,7 @@ class UnknownSpec(BaseModel):
     low: float
     high: float
     unit: str
+    scope: str = "world"
 
 
 class ModifiableSpec(BaseModel):
