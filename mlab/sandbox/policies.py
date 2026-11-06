@@ -16,12 +16,15 @@ import hashlib
 import os
 import re
 import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[2]
 WORKSPACE_ROOT = PROJECT.parent
 HOME = Path.home()
+# World-shared scratch space: one agent could leave notes there for the other.
+SHARED_TMP = [Path("/private/tmp"), Path(tempfile.gettempdir())]
 LEARNER_VENV = HOME / ".local" / "share" / "mlab" / "learner-venv"
 LEARNER_PACKAGES = ["numpy", "scipy", "mujoco", "matplotlib"]
 SENSITIVE_HOME = [
@@ -127,18 +130,19 @@ class Policy:
         return path
 
 
-def learner_policy(run_root: Path, workspace: Path, tmpdir: Path, history: list[Path]) -> Policy:
+def learner_policy(run_root: Path, workspace: Path, tmpdir: Path, history: list[Path],
+                   socket_dir: Path | None = None) -> Policy:
     return Policy(
         role="learner",
-        deny=[WORKSPACE_ROOT, run_root.parent, *SENSITIVE_HOME, *history],
-        allow_rw=[workspace, tmpdir],
+        deny=[WORKSPACE_ROOT, run_root.parent, *SENSITIVE_HOME, *SHARED_TMP, *history],
+        allow_rw=[workspace, tmpdir, *([socket_dir] if socket_dir else [])],
     )
 
 
 def builder_policy(run_root: Path, workspace: Path, tmpdir: Path, history: list[Path]) -> Policy:
     return Policy(
         role="builder",
-        deny=[WORKSPACE_ROOT, run_root.parent, *SENSITIVE_HOME, *history],
+        deny=[WORKSPACE_ROOT, run_root.parent, *SENSITIVE_HOME, *SHARED_TMP, *history],
         allow_read=[PROJECT / ".venv", PROJECT / "mlab", PROJECT / "pyproject.toml"],
         allow_read_literal=[PROJECT, WORKSPACE_ROOT],
         allow_rw=[workspace, tmpdir],

@@ -67,7 +67,7 @@ def test_sandboxed_lab_client_drives_session_but_cannot_read_secrets(served_lab)
         py = str(ensure_learner_venv())
         shutil.copy(PROJECT / "mlab" / "cli" / "lab.py", ws / "lab.py")
         (ws / ".lab.json").write_text(json.dumps(server.client_config("t")))
-        profile = learner_policy(base, ws, tmp, []).write(base / "learner.sb")
+        profile = learner_policy(base, ws, tmp, [], socket_dir=server.dir).write(base / "learner.sb")
 
         def run(*args):
             return subprocess.run(wrap(profile, [py, "lab.py", *args]), cwd=ws, capture_output=True,

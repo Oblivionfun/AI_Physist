@@ -83,6 +83,10 @@ def run_selftest(keep: bool = False) -> list[Check]:
     fake_history.mkdir(parents=True, exist_ok=True)
     (fake_history / "store.txt").write_text(canary_build)
     tmp = Path(tempfile.mkdtemp(prefix="mlab-tmp-"))
+    shared_note = Path("/private/tmp") / f"selftest-note-{canary_build[-8:]}.txt"
+    shared_note.write_text(canary_build)
+    user_tmp_note = Path(tempfile.gettempdir()) / f"selftest-note-{canary_build[-8:]}.txt"
+    user_tmp_note.write_text(canary_build)
     checks: list[Check] = []
 
     cwd = {"learner": learner_ws, "builder": builder_ws, "theory": tmp}
@@ -114,6 +118,9 @@ def run_selftest(keep: bool = False) -> list[Check]:
         check(r, "resolve own workspace path", lp,
               _py(r, f"import os; print(os.path.realpath({str(learner_ws)!r}))"), True)
         check(r, "list run directory", lp, _listdir(r, run_root), False)
+        check(r, "read note in /tmp", lp, _read(r, shared_note), False)
+        check(r, "read note in user TMPDIR", lp, _read(r, user_tmp_note), False)
+        check(r, "write own private tmp", lp, _write(r, tmp / "scratch.txt"), True)
 
         r = "builder"
         bp = builder_policy(run_root, builder_ws, tmp, [fake_history]).write(base / "builder.sb")
@@ -127,6 +134,9 @@ def run_selftest(keep: bool = False) -> list[Check]:
               _read(r, PROJECT / "mlab" / "agents" / "builders" / "reference.py"), False)
         check(r, "read earlier agent chat", bp, _read(r, fake_history / "store.txt"), False)
         check(r, "write learner workspace", bp, _write(r, learner_ws / "hint.txt"), False)
+        check(r, "write note to /tmp", bp, _write(r, Path("/private/tmp") / "builder-hint.txt"), False)
+        check(r, "write note to user TMPDIR", bp,
+              _write(r, Path(tempfile.gettempdir()) / "builder-hint.txt"), False)
 
         r = "theory"
         tp = theory_policy(tmp).write(base / "theory.sb")
@@ -138,6 +148,8 @@ def run_selftest(keep: bool = False) -> list[Check]:
     finally:
         shutil.rmtree(fake_history, ignore_errors=True)
         shutil.rmtree(tmp, ignore_errors=True)
+        shared_note.unlink(missing_ok=True)
+        user_tmp_note.unlink(missing_ok=True)
         if not keep:
             shutil.rmtree(base, ignore_errors=True)
     return checks

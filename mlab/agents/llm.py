@@ -93,8 +93,8 @@ class LLMLearner:
         try:
             python = self._prepare(tag, server, deadline)
             history = snapshot_agent_history(self.workspace)
-            profile = learner_policy(self.run_root, self.workspace, tmp, history).write(
-                self.profiles / f"learner_{tag}.sb")
+            profile = learner_policy(self.run_root, self.workspace, tmp, history,
+                                     socket_dir=server.dir).write(self.profiles / f"learner_{tag}.sb")
             env = agent_env(self.workspace, tmp, [self.workspace, python.parent])
             prompt = load("learner") + f"\nSession {tag}. Begin with `./lab card`.\n"
             transcript = self.transcripts / f"learner_{tag}.jsonl"
