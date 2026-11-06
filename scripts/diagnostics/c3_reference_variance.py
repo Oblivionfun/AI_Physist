@@ -47,7 +47,11 @@ def main() -> None:
         prof = dataclasses.replace(prof, reference_fit=FitBudget(*map(int, args.fit.split(","))))
     sub = certified_submission(root, args.round)
     cert = json.loads(next((root / "referee" / "certificates").glob(f"r{args.round}_a*.json")).read_text())
-    keys = cert["stats"]["relevant_parameters"][: prof.reference_max_keys]
+    recorded = cert["stats"]["relevant_parameters"]
+    keys = recorded[: prof.reference_max_keys]
+    if args.keys and args.keys > len(recorded):
+        print(f"warning: the certificate recorded only {len(recorded)} relevant parameters; "
+              f"--keys {args.keys} cannot add more (use recertify.py --keys instead)")
     dev = instance_device(root, args.round, args.instance, sub)
     task = sub.task
     priors = hidden_priors(sub.device)

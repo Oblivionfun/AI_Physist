@@ -33,16 +33,23 @@ def main() -> None:
     ap.add_argument("run_id")
     ap.add_argument("--profile", choices=sorted(PROFILES), default="fast")
     ap.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
+    ap.add_argument("--keys", type=int, help="override the number of parameters the reference fits")
+    ap.add_argument("--fit", help="FitBudget as search_points,search_subset,fit_subset,starts,evals")
     ap.add_argument("--runs-dir", type=Path, default=Path.home() / "mlab-runs")
     args = ap.parse_args()
     world = json.loads((args.runs_dir / args.run_id / "referee" / "secrets.json").read_text())["world"]
     sub = load(str(args.device))
+    profile = PROFILES[args.profile]
+    if args.keys:
+        profile = dataclasses.replace(profile, reference_max_keys=args.keys)
+    if args.fit:
+        profile = dataclasses.replace(profile, reference_fit=FitBudget(*map(int, args.fit.split(","))))
     for seed in args.seeds:
         t0 = time.time()
-        cert = certify(sub, world, np.random.default_rng(seed), PROFILES[args.profile],
-                       stop_on_fail=False)
-        print(f"{args.device.name} {args.profile} seed {seed}: "
-              f"{'CERTIFIED' if cert.passed else 'REJECTED'} ({time.time() - t0:.0f}s)")
+        cert = certify(sub, world, np.random.default_rng(seed), profile, stop_on_fail=False)
+        print(f"{args.device.name} {args.profile} keys {profile.reference_max_keys} seed {seed}: "
+              f"{'CERTIFIED' if cert.passed else 'REJECTED'} ({time.time() - t0:.0f}s), "
+              f"relevant {cert.stats.get('relevant_parameters')}")
         for v in cert.verdicts:
             if not v.passed or v.title.startswith("learnability"):
                 print("   ", v.line())
