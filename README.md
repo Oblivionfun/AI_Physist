@@ -4,6 +4,7 @@
 
 - 方案：[`终极方案.md`](终极方案.md)
 - 设计记录（隔离、避免无解、证明学会）：[`DESIGN.md`](DESIGN.md)
+- 研发过程记录（做法、问题、转向，汇报用）：[`docs/process.md`](docs/process.md)
 - 决策记录：[`docs/decisions.md`](docs/decisions.md)；工作日志：[`docs/worklog.md`](docs/worklog.md)
 - 项目约定：[`AGENTS.md`](AGENTS.md)
 
