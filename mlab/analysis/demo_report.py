@@ -144,7 +144,7 @@ def build(run_id: str, runs_dir: Path | None = None, dest: Path | None = None) -
         lines += ["## Builder sessions", ""]
         for b in builder_calls:
             t = root / "referee" / "transcripts" / f"builder_call{b['call']:02d}.jsonl"
-            _, final, tools, usage = parse_stream(t)
+            _, final, tools, _usage = parse_stream(t)
             lines.append(f"- call {b['call']} (round {b['round']}): submitted={b['submitted']}, "
                          f"{tools} tool calls, {sum(x['seconds'] for x in b['runs']):.0f} s")
             if final:
