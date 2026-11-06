@@ -40,7 +40,9 @@ def _install_script(dst: Path, python: Path, body: str) -> None:
 
 class LLMLearner:
     def __init__(self, backend: CursorAgentBackend, run_root: Path, workspace: Path,
-                 transcripts: Path, profiles: Path, max_nudges: int = 2, log=print):
+                 transcripts: Path, profiles: Path, max_nudges: int = 2, log=print,
+                 amnesic: bool = False):
+        """amnesic (ablation): the workspace is wiped before every session."""
         self.backend = backend
         self.run_root = run_root
         self.workspace = workspace
@@ -48,6 +50,7 @@ class LLMLearner:
         self.profiles = profiles
         self.max_nudges = max_nudges
         self.log = log
+        self.amnesic = amnesic
         self.sessions = 0
         self.history: list[dict] = []
 
@@ -61,12 +64,14 @@ class LLMLearner:
         if self.workspace.exists():
             shutil.copytree(self.workspace, dst, ignore=shutil.ignore_patterns(".lab.json"))
         twin = LLMLearner(self.backend, self.run_root, dst, self.transcripts, self.profiles,
-                          self.max_nudges, self.log)
+                          self.max_nudges, self.log, self.amnesic)
         twin.sessions = self.sessions
         return twin
 
     def _prepare(self, tag: str, server: LabServer, deadline: float) -> Path:
         ws = self.workspace
+        if self.amnesic and ws.exists():
+            shutil.rmtree(ws)
         (ws / "theories").mkdir(parents=True, exist_ok=True)
         (ws / "data").mkdir(exist_ok=True)
         notebook = ws / "notebook.md"

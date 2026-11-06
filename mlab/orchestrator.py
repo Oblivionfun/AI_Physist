@@ -62,6 +62,7 @@ class RunConfig:
     runs_dir: Path = field(default_factory=default_runs_dir)
     blackbox_control: bool = True
     sandbox_theories: bool = False
+    instances_from: Path | None = None
 
     @property
     def root(self) -> Path:
@@ -204,6 +205,11 @@ class Orchestrator:
                 continue
 
             version += 1
+            recorded = (self.cfg.instances_from / "referee" / "instances" / f"r{r}.json"
+                        if self.cfg.instances_from else None)
+            if recorded is not None and recorded.exists():
+                saved = json.loads(recorded.read_text())
+                thetas = [saved["A"], saved["B"]]
             _write(self.dirs.referee / "instances" / f"r{r}.json", {"A": thetas[0], "B": thetas[1]})
             card = build_card(sub, version, changelog(prev_sub, sub))
             _write(self.dirs.public / "cards" / f"v{version}.json", card.model_dump())
@@ -280,3 +286,24 @@ class Orchestrator:
 
 def offline_learner(seed: int) -> ScriptedAgent:
     return ScriptedAgent(SurrogateLearner(np.random.default_rng(seed)))
+
+
+class RecordedBuilder:
+    """Re-submits the certified designs of an earlier run, round by round, so that another
+    learner can be compared on identical devices (and, via instances_from, identical
+    instances)."""
+
+    def __init__(self, source: Path):
+        self.source = source
+        self.name = f"recorded:{source.name}"
+        self.summary = json.loads((source / "referee" / "summary.json").read_text())
+
+    def propose(self, round_index: int, report: dict | None, rejection: str | None) -> Submission | None:
+        if rejection is not None:
+            return None
+        r = next((x for x in self.summary["rounds"] if x["round"] == round_index), None)
+        if r is None or r.get("status") != "ok":
+            return None
+        attempt = next(a["attempt"] for a in r["attempts"] if a["passed"])
+        path = self.source / "referee" / "submissions" / f"r{round_index}_a{attempt}.json"
+        return Submission.model_validate_json(path.read_text())
