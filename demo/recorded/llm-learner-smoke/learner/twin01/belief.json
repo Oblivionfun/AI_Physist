@@ -1,0 +1,12 @@
+{
+  "estimates": {
+    "damping.rail": {"value": 0.33, "low": 0.18, "high": 0.55},
+    "friction.concrete": {"value": 0.68, "low": 0.50, "high": 0.84},
+    "friction.steel": {"value": 0.23, "low": 0.16, "high": 0.34},
+    "friction.wood": {"value": 0.42, "low": 0.30, "high": 0.58},
+    "frictionloss.rail": {"value": 0.16, "low": 0.08, "high": 0.29},
+    "rolling.concrete": {"value": 0.0009, "low": 0.0004, "high": 0.0014},
+    "rolling.steel": {"value": 0.0008, "low": 0.0003, "high": 0.0013},
+    "stiffness.coil_stiff": {"value": 840.0, "low": 520.0, "high": 1250.0}
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "title": "Land the ball on a spot",
+  "goal_text": "Cock the plunger and release it so that the ball rolls off the deck and first touches the ground at the target x position.",
+  "manual": "Device 'ball_launcher' (4 parts). Coordinates in metres, z up, ground at z=0. Joint coordinates are 0 in the pose described here.\nParts:\n- deck: box 0.800 x 0.200 x 0.300 m, wood, mass 31.200 kg; centre (0.000, 0.000, 0.150), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.400, -0.100, 0.000)..(0.400, 0.100, 0.300); rests on the ground, fixed in place\n- housing: box 0.060 x 0.080 x 0.060 m, steel, mass 2.261 kg; centre (-0.070, 0.000, 0.330), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.100, -0.040, 0.300)..(-0.040, 0.040, 0.360); rigidly fixed to 'deck'\n- plunger: box 0.060 x 0.060 x 0.040 m, steel, mass 1.130 kg; centre (-0.010, 0.000, 0.325), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.040, -0.030, 0.305)..(0.020, 0.030, 0.345); slide joint to 'housing' at (-0.040, 0.000, 0.325), axis (1.000, 0.000, 0.000), rail model, end stops [-0.150, 0.080] m, coil_stiff spring relaxed at 0.000\n- ball: sphere radius 0.020 m, steel, mass 0.263 kg; centre (0.045, 0.000, 0.320), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (0.025, -0.020, 0.300)..(0.065, 0.020, 0.340); loose (free body)\nLatches (hold the joint at its starting value until released):\n- trigger: locks 'plunger'\nSensors (Gaussian noise, standard deviation):\n- plunger_pos: joint_angle of 'plunger', noise 0.002\n- ball_pos: position of 'ball', noise 0.003\nPhysics: rigid bodies with soft contacts, gravity 9.81 m/s^2 along -z. Contact friction between two surfaces is the larger of their two coefficients. Parts made of the same material share the same (unknown) friction everywhere in this world.\nBefore each run: joint of 'plunger' is set to knob 'compression'\nAction program (then all commands 0 until the end): phase 0: lasts 0.05 s; commands [none]; release trigger at start",
+  "knobs": [
+    {
+      "name": "compression",
+      "low": -0.14,
+      "high": -0.02,
+      "unit": "m",
+      "description": "plunger position when cocked (negative = compressed)"
+    }
+  ],
+  "sensors": [
+    {
+      "name": "plunger_pos",
+      "kind": "joint_angle",
+      "part": "plunger",
+      "noise": 0.002,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "ball_pos",
+      "kind": "position",
+      "part": "ball",
+      "noise": 0.003,
+      "rate_hz": 25.0
+    }
+  ],
+  "unknowns": [
+    {
+      "name": "damping.rail",
+      "description": "rail viscous damping",
+      "low": 0.1,
+      "high": 0.8,
+      "unit": "N*s/m"
+    },
+    {
+      "name": "friction.concrete",
+      "description": "sliding friction coefficient of concrete",
+      "low": 0.4,
+      "high": 0.9,
+      "unit": "-"
+    },
+    {
+      "name": "friction.steel",
+      "description": "sliding friction coefficient of steel",
+      "low": 0.15,
+      "high": 0.45,
+      "unit": "-"
+    },
+    {
+      "name": "friction.wood",
+      "description": "sliding friction coefficient of wood",
+      "low": 0.25,
+      "high": 0.65,
+      "unit": "-"
+    },
+    {
+      "name": "frictionloss.rail",
+      "description": "rail dry friction",
+      "low": 0.05,
+      "high": 0.4,
+      "unit": "N"
+    },
+    {
+      "name": "rolling.concrete",
+      "description": "rolling resistance length of concrete",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m"
+    },
+    {
+      "name": "rolling.steel",
+      "description": "rolling resistance length of steel",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m"
+    },
+    {
+      "name": "stiffness.coil_stiff",
+      "description": "coil_stiff stiffness",
+      "low": 250.0,
+      "high": 1500.0,
+      "unit": "N/m"
+    }
+  ],
+  "outcome": {
+    "kind": "landing_point",
+    "part": "ball",
+    "axes": [
+      "x"
+    ],
+    "description": "the x coordinate(s) of 'ball' at the moment it first touches the ground",
+    "noise": 0.003,
+    "goal_space": [
+      [
+        0.55,
+        0.68
+      ]
+    ],
+    "tolerance": 0.015
+  },
+  "modifiable": [
+    {
+      "name": "ball.posx",
+      "current": 0.045,
+      "low": 0.045,
+      "high": 0.1
+    }
+  ],
+  "protocol": {
+    "pretest_goals": 3,
+    "budget": 40,
+    "probe_every": 10,
+    "exam_goals": 8,
+    "horizon": 2.0
+  },
+  "rules": "Protocol (enforced by the lab tool):\n1. Pretest: you get 3 goals one at a time and must choose knob values for each\n   before running any experiment on this device. Results are revealed only at the end.\n2. Lab: up to 40 experiments. Every experiment requires your prediction of the\n   outcome before you see the result. Every 10th experiment is chosen by the referee:\n   you are told the knob values, you predict, then you see the result.\n3. Theory: submit predict.py defining predict(knobs: dict, visible: dict) -> list[float],\n   your model of the outcome. `visible` holds the modifiable dimensions listed below; the\n   referee may evaluate your model with different values for them, without letting you\n   experiment. Also submit your estimates of the unknown quantities with 90% intervals.\n4. Exam: 8 goals one at a time, one attempt each, no experiments. Results are\n   revealed only at the end.\n5. Field report: optional tickets about the interface (bugs, ambiguity, suspected\n   unsolvability). Tickets go to the device builder; they cannot contain answers.\nOutcome is a failure if the run status is not \"ok\" (e.g. the part never landed, or was\nstill moving at the end of the run).",
+  "changelog": [
+    "first version"
+  ]
+}

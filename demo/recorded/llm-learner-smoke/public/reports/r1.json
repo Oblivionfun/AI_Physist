@@ -1,0 +1,81 @@
+{
+  "round": 1,
+  "device_version": 1,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=1.000 threshold=0.8. privileged oracle hit 24/24 goals under actuation noise (95% CI 0.86-1.00)",
+    "C0 timestep convergence: PASS value=0.135 threshold=1. halving the timestep moves solving outcomes by 0.13 x tolerance",
+    "C1b robustness: PASS value=1.000 threshold=0.6. 48/48 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.078 threshold=0.3. over the prior, solving with prior-centre parameters hits 5/64 goals (95% CI 0.03-0.17; in this run's world: 0/24)",
+    "C2 necessity (single fixed action): PASS value=0.252 threshold=0.3. the best single action reaches 25% of goals",
+    "C3 identifiability (posterior predictive): PASS value=0.011 threshold=0.5. after 40 experiments the outcome uncertainty is 0.01 x tolerance (before experiments: 3.60 x)",
+    "C3 learnability (gray-box reference learner): PASS value=1.000 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 40 experiments, hit 6/6 goals"
+  ],
+  "reference_learner_success": 1.0,
+  "oracle_success": 1.0,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 16,
+      "budget": 40,
+      "prediction_error_first_vs_last": [
+        0.1567507279574591,
+        0.027402845195867442
+      ],
+      "probe_errors_over_tol": [
+        0.28095095631273104
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified ball.posx=0.089": 0.0
+      },
+      "failure_tags": [
+        "modification_fail"
+      ]
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 22,
+      "budget": 40,
+      "prediction_error_first_vs_last": [
+        4.426295850534182,
+        0.1381683767010163
+      ],
+      "probe_errors_over_tol": [
+        2.2199646674961735,
+        0.04163926341322159
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified ball.posx=0.089": 0.0
+      },
+      "failure_tags": [
+        "modification_fail"
+      ]
+    }
+  ],
+  "learnability": 0.0,
+  "swap_test": {
+    "A_on_A": 1.0,
+    "B_on_B": 1.0,
+    "A_on_B": 1.0,
+    "B_on_A": 1.0,
+    "note": "not informative: the device has no device-specific hidden quantity, so both instances share identical physics"
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "ball.posx": 6.026055675150532
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [],
+  "guidance": "Learner exam success 100% is above the target band 30%-80%: the next version should be harder in a new dimension. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions). The device declares no device-specific hidden quantity, so every instance is identical; add one (e.g. a sealed mass) so that each instance must be identified anew."
+}
