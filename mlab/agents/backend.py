@@ -39,6 +39,8 @@ def agent_env(workspace: Path, tmpdir: Path, extra_path: list[Path]) -> dict[str
         "TERM": "xterm-256color",
         "SHELL": "/bin/zsh",
         "TMPDIR": str(tmpdir) + "/",
+        # zsh writes here-documents under TMPPREFIX (default /tmp/zsh), which the sandbox closes.
+        "TMPPREFIX": str(tmpdir) + "/zsh",
         "PWD": str(workspace),
     }
 
