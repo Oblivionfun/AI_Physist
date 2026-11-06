@@ -36,6 +36,20 @@ uv run mlab run --run-id demo --rounds 3 --profile full \
   --learner cursor --learner-model gpt-5.6-sol-high
 ```
 
+对照实验（在同一个世界、同样的设计、同样的孪生实例上，换一个学习者重跑）：
+
+```bash
+uv run mlab rerun-learner demo --run-id demo-weak --learner-model gpt-5.3-codex   # 较弱的模型
+uv run mlab rerun-learner demo --run-id demo-amnesic --learner-model gpt-5.6-sol-high --amnesic
+uv run mlab rerun-learner demo --run-id demo-scripted --learner scripted           # 黑盒基线
+```
+
+导出演示（时间线、图表、MuJoCo 回放动画、Agent 产物）：
+
+```bash
+uv run python -m mlab.analysis.demo_report demo     # 写入 demo/recorded/demo/
+```
+
 运行目录：`~/mlab-runs/<run_id>/`（可用 `MLAB_RUNS_DIR` 覆盖）。
 
 | 目录 | 内容 | 谁能访问 |

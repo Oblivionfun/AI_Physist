@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from fixtures.devices import pendulum_striker
 from mlab.agents.builders.reference import ReferenceBuilder
 from mlab.catalog import sample_world
 from mlab.construct import compile_device
-from mlab.orchestrator import Orchestrator, RunConfig, offline_learner
+from mlab.orchestrator import Orchestrator, RecordedBuilder, RunConfig, offline_learner
 from mlab.referee.channel import verify
 from mlab.referee.theory_eval import QuerySet, build_query_sets, run_theory, score
 from mlab.referee.theta import twin_instances
@@ -54,6 +55,21 @@ def test_offline_loop_runs_one_round(tmp_path):
     assert ok and n >= 1
     assert (tmp_path / "t" / "referee" / "secrets.json").exists()
     assert not list((tmp_path / "t" / "public").rglob("secrets*"))
+
+
+def test_rerun_reuses_world_devices_and_instances(tmp_path):
+    src = RunConfig(run_id="src", rounds=1, seed=5, profile="test", runs_dir=tmp_path)
+    Orchestrator(src, ReferenceBuilder(), offline_learner(5), log=lambda *_: None).run()
+    secrets = json.loads((tmp_path / "src" / "referee" / "secrets.json").read_text())
+    again = RunConfig(run_id="again", rounds=1, seed=secrets["seed"], profile="test",
+                      runs_dir=tmp_path, instances_from=tmp_path / "src")
+    summary = Orchestrator(again, RecordedBuilder(tmp_path / "src"), offline_learner(9),
+                           log=lambda *_: None).run()
+    assert summary["rounds"][0]["status"] == "ok"
+    for name in ("secrets.json", "instances/r1.json"):
+        a = json.loads((tmp_path / "src" / "referee" / name).read_text())
+        b = json.loads((tmp_path / "again" / "referee" / name).read_text())
+        assert a.get("world", a) == b.get("world", b) if name == "secrets.json" else a == b
 
 
 def test_learner_side_code_has_no_device_specifics():
