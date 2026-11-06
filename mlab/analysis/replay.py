@@ -37,14 +37,47 @@ def instance_device(root: Path, round_index: int, label: str, sub: Submission) -
     return compile_device(sub.device, thetas[label])
 
 
-def _camera(sub: Submission) -> mujoco.MjvCamera:
-    lo = np.min([part_aabb(p)[0] for p in sub.device.parts], axis=0)
-    hi = np.max([part_aabb(p)[1] for p in sub.device.parts], axis=0)
+def _moving_parts(sub: Submission) -> list:
+    """Parts that can move: jointed or free parts and everything fixed onto them."""
+    parts = {p.name: p for p in sub.device.parts}
+
+    def moves(p) -> bool:
+        while p.mount.kind == "fixed" and p.mount.parent is not None:
+            p = parts[p.mount.parent]
+        return p.mount.kind in ("hinge", "slide", "free")
+
+    return [p for p in sub.device.parts if moves(p)]
+
+
+def _goal_points(sub: Submission) -> list[np.ndarray]:
+    task = sub.task
+    if task.outcome.kind not in ("landing_point", "final_position"):
+        return []
+    axes = {"x": 0, "y": 1, "z": 2}
+    base = np.asarray(sub.device.part(task.outcome.part).pos, dtype=float)
+    points = []
+    for corner in (0, 1):
+        p = base.copy()
+        if task.outcome.kind == "landing_point":
+            p[2] = 0.0
+        for a, g in zip(task.outcome.axes, task.goal_space, strict=True):
+            p[axes[a]] = g.low if corner == 0 else g.high
+        points.append(p)
+    return points
+
+
+def _camera(sub: Submission, extra: list[np.ndarray] | None = None) -> mujoco.MjvCamera:
+    """Three-quarter view framing the moving mechanism (and `extra` points, e.g. the goals)."""
+    focus = _moving_parts(sub) or sub.device.parts
+    lo = np.min([part_aabb(p)[0] for p in focus], axis=0)
+    hi = np.max([part_aabb(p)[1] for p in focus], axis=0)
+    for point in extra or []:
+        lo, hi = np.minimum(lo, point), np.maximum(hi, point)
     cam = mujoco.MjvCamera()
     cam.lookat[:] = (lo + hi) / 2
-    cam.distance = float(1.15 * max(hi[0] - lo[0], hi[2] - lo[2]) + 0.45)
-    cam.azimuth = -90.0
-    cam.elevation = -14.0
+    cam.distance = float(1.15 * np.max(hi - lo) + 0.3)
+    cam.azimuth = -125.0
+    cam.elevation = -18.0
     return cam
 
 
@@ -57,37 +90,69 @@ def _marker(scene: mujoco.MjvScene, pos, rgba, radius: float = 0.02) -> None:
     scene.ngeom += 1
 
 
+def _pin(scene: mujoco.MjvScene, pos, rgba, height: float = 0.12) -> None:
+    """A thin vertical pin standing on `pos`, visible even where it overlaps a goal marker."""
+    if scene.ngeom >= scene.maxgeom:
+        return
+    centre = np.asarray(pos, dtype=float) + np.array([0.0, 0.0, height / 2])
+    mujoco.mjv_initGeom(scene.geoms[scene.ngeom], mujoco.mjtGeom.mjGEOM_CYLINDER,
+                        np.array([0.006, height / 2, 0]), centre, np.eye(3).ravel(),
+                        np.asarray(rgba, dtype=np.float32))
+    scene.ngeom += 1
+
+
+def _outcome_point(sub: Submission, values) -> np.ndarray | None:
+    """Where an outcome (or goal) of a positional task lies in the world, for a marker."""
+    task = sub.task
+    if values is None or task.outcome.kind not in ("landing_point", "final_position"):
+        return None
+    axes = {"x": 0, "y": 1, "z": 2}
+    pos = np.array([0.0, 0.0, 0.005])
+    if task.outcome.kind == "final_position" and "z" not in task.outcome.axes:
+        pos[2] = sub.device.part(task.outcome.part).pos[2]
+    for a, v in zip(task.outcome.axes, values, strict=True):
+        pos[axes[a]] = float(v)
+    return pos
+
+
+GOAL_RGBA = (0.1, 0.85, 0.3, 0.9)
+OUTCOME_RGBA = (1.0, 0.55, 0.1, 0.9)
+
+
 def render_action(sub: Submission, dev: CompiledDevice, knobs: dict, goal: list[float] | None,
                   caption: str, out: Path) -> Path:
+    """Green ball: the goal. Orange pin: where the outcome was measured (for a landing point,
+    the first touch of the ground; the part may bounce or roll on afterwards)."""
     renderer = mujoco.Renderer(dev.model, HEIGHT, WIDTH)
-    cam = _camera(sub)
+    cam = _camera(sub, _goal_points(sub))
     frames: list[Image.Image] = []
-    marker = None
-    if goal is not None and sub.task.outcome.kind in ("landing_point", "final_position"):
-        axes = {"x": 0, "y": 1, "z": 2}
-        pos = np.array([0.0, 0.0, 0.005])
-        for a, g in zip(sub.task.outcome.axes, goal, strict=True):
-            pos[axes[a]] = g
-        part = sub.device.part(sub.task.outcome.part)
-        if "z" not in sub.task.outcome.axes and sub.task.outcome.kind == "final_position":
-            pos[2] = part.pos[2]
-        marker = pos
+    result = simulate(dev, sub.task, knobs)
+    goal_pos = _outcome_point(sub, goal)
+    outcome_pos = _outcome_point(sub, result.outcome)
 
     def grab(data: mujoco.MjData) -> None:
         renderer.update_scene(data, camera=cam)
-        if marker is not None:
-            _marker(renderer.scene, marker, (0.1, 0.85, 0.3, 0.9))
+        if goal_pos is not None:
+            _marker(renderer.scene, goal_pos, GOAL_RGBA)
+        if outcome_pos is not None:
+            _pin(renderer.scene, outcome_pos, OUTCOME_RGBA)
         img = Image.fromarray(renderer.render())
         draw = ImageDraw.Draw(img)
         draw.rectangle((0, 0, WIDTH, 22), fill=(255, 255, 255))
         draw.text((6, 5), f"{caption}   t={data.time:.2f}s", fill=(0, 0, 0))
         frames.append(img)
 
-    result = simulate(dev, sub.task, knobs, sample_hz=FPS, early_stop=True, on_sample=grab)
+    simulate(dev, sub.task, knobs, sample_hz=FPS, early_stop=True, on_sample=grab)
     if frames:
         draw = ImageDraw.Draw(frames[-1])
         outcome = None if result.outcome is None else [round(float(v), 3) for v in result.outcome]
-        draw.text((6, HEIGHT - 18), f"outcome {outcome} status {result.status}", fill=(255, 255, 255))
+        text = f"outcome (orange pin) {outcome}, status {result.status}"
+        if goal is not None and result.outcome is not None:
+            miss = float(np.linalg.norm(np.asarray(result.outcome) - np.asarray(goal)))
+            verdict = "HIT" if miss <= sub.task.tolerance else "MISS"
+            text += f"; goal (green) {np.round(goal, 3).tolist()}: {verdict}"
+        draw.rectangle((0, HEIGHT - 22, WIDTH, HEIGHT), fill=(255, 255, 255))
+        draw.text((6, HEIGHT - 17), text, fill=(0, 0, 0))
         frames += [frames[-1]] * FPS
     out.parent.mkdir(parents=True, exist_ok=True)
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=int(1000 / FPS), loop=0,
@@ -130,6 +195,6 @@ def replay_round(root: Path, round_index: int, dest: Path) -> list[Path]:
         if a is not None:
             outputs.append(render_action(
                 sub, dev, a["knobs"], a["goal"],
-                f"round {round_index} exam goal {np.round(a['goal'], 3).tolist()} ({tag})",
+                f"round {round_index} exam, recorded {tag} (noise-free replay)",
                 dest / f"r{round_index}_exam_{tag}.gif"))
     return outputs

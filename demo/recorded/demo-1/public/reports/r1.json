@@ -1,0 +1,103 @@
+{
+  "round": 1,
+  "device_version": 1,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=1.000 threshold=0.8. privileged oracle hit 48/48 goals under actuation noise (95% CI 0.93-1.00)",
+    "C0 timestep convergence: PASS value=0.323 threshold=1. halving the timestep moves solving outcomes by 0.32 x tolerance",
+    "C1b robustness: PASS value=0.979 threshold=0.6. 94/96 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.125 threshold=0.3. over the prior, solving with prior-centre parameters hits 12/96 goals (95% CI 0.07-0.21; in this run's world: 2/24)",
+    "C2 necessity (single fixed action): PASS value=0.249 threshold=0.3. the best single action reaches 25% of goals",
+    "C3 identifiability (posterior predictive): PASS value=0.000 threshold=0.5. after 80 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 4.26 x)",
+    "C3 learnability (gray-box reference learner): PASS value=1.000 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 80 experiments, hit 8/8 goals"
+  ],
+  "reference_learner_success": 1.0,
+  "oracle_success": 1.0,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 80,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        1.3615302219627115,
+        0.5707155426490291
+      ],
+      "probe_errors_over_tol": [
+        3.8204774820765874,
+        2.7767112848676945,
+        46.58938830883842,
+        1.0358966731231398,
+        0.708507187136188,
+        1.4301886938635908,
+        0.22888659120950647,
+        0.2759794217789329
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.875,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.0,
+        "modified slug.posz=0.734": 0.0
+      },
+      "failure_tags": [
+        "budget_exhausted",
+        "modification_fail"
+      ]
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 0.75,
+      "experiments_used": 80,
+      "budget": 80,
+      "prediction_error_first_vs_last": [
+        4.958374723096467,
+        0.5278427322886323
+      ],
+      "probe_errors_over_tol": [
+        30.602574147250454,
+        2.1584847906674596,
+        0.6976300918757985,
+        0.5038834729694049,
+        1.9849734907798804,
+        1.1396748252958828,
+        0.7982380749800814,
+        2.0064335627625614
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.625,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.25,
+        "modified slug.posz=0.734": 0.375
+      },
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ]
+    }
+  ],
+  "learnability": 0.109375,
+  "swap_test": {
+    "A_on_A": 0.875,
+    "B_on_B": 0.625,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 3.198663514581333,
+      "slug.posz": 2.46244834474315
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [
+    {
+      "category": "interface_bug",
+      "text": "Every lab command appended repeated shell diagnostics: `_emit_encoded:5: cant create temp file for here document: operation not permitted`. The command itself still completed successfully, but the unrelated stderr noise obscured the protocol output."
+    }
+  ],
+  "guidance": "Learner exam success 88% is above the target band 30%-80%: the next version should be harder in a new dimension. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions)."
+}

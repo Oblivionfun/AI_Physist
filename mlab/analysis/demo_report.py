@@ -57,22 +57,33 @@ def _fig_scores(rounds: list[dict], out: Path) -> Path | None:
     ok = [r for r in rounds if r.get("status") == "ok"]
     if not ok:
         return None
-    labels, pre, exam, bb = [], [], [], []
+    labels, pre, exam, bb, invalid = [], [], [], [], []
     for r in ok:
         for m in r["metrics"]:
             labels.append(f"r{r['round']}{m['label']}")
             pre.append(m["pretest_rate"])
             exam.append(m["exam_rate"])
-            bb.append(r["controls"].get("blackbox_exam_success"))
-    x = range(len(labels))
-    fig, ax = plt.subplots(figsize=(1.2 * len(labels) + 3, 3.4))
-    ax.bar([i - 0.25 for i in x], pre, 0.25, label="pretest (no experiments)")
-    ax.bar(list(x), exam, 0.25, label="exam (after lab)")
-    ax.bar([i + 0.25 for i in x], [b or 0 for b in bb], 0.25, label="black-box baseline exam")
-    ax.set_xticks(list(x), labels)
-    ax.set_ylim(0, 1.05)
+            # the black-box control runs once per round, on instance A
+            bb.append(r["controls"].get("blackbox_exam_success") if m["label"] == "A" else None)
+            invalid.append(bool(m.get("invalid")))
+    x = list(range(len(labels)))
+    fig, ax = plt.subplots(figsize=(1.2 * len(labels) + 3, 3.8))
+    series = [(-0.27, pre, "pretest (no experiments)", "#4c72b0"),
+              (0.0, exam, "exam (after lab)", "#dd8452"),
+              (0.27, bb, "black-box baseline exam (instance A)", "#55a868")]
+    for dx, values, label, color in series:
+        ax.bar([i + dx for i in x], [v or 0 for v in values], 0.25, label=label, color=color)
+        for i, v in zip(x, values, strict=True):
+            if v is not None and not invalid[i]:
+                ax.text(i + dx, v + 0.02, f"{v:.0%}", ha="center", va="bottom", fontsize=7)
+    for i in x:
+        if invalid[i]:
+            ax.text(i, 0.5, "invalid\n(infrastructure)", ha="center", va="center", fontsize=7,
+                    color="#a00")
+    ax.set_xticks(x, labels)
+    ax.set_ylim(0, 1.2)
     ax.set_ylabel("success rate")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.16), frameon=False)
     fig.tight_layout()
     path = out / "success.png"
     fig.savefig(path, dpi=130)

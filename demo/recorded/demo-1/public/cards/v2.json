@@ -1,0 +1,206 @@
+{
+  "version": 2,
+  "title": "Sprung stop-block catapult",
+  "goal_text": "The arm is cocked away from the stop post against a torsion spring, the sealed slug is clamped somewhere along the arm rail, then the motor drives the arm back. The striker slams the post, the arm halts, and the ball leaves the cup and flies over the post. Place the ball's first ground contact at the requested x coordinate (it lands on the negative-x side). Spring and motor both feed the throw; where the slug sits decides how much of that energy the ball gets.",
+  "manual": "Device 'spring_stop_catapult' (9 parts). Coordinates in metres, z up, ground at z=0. Joint coordinates are 0 in the pose described here.\nParts:\n- column: box 0.080 x 0.100 x 0.620 m, concrete, mass 11.904 kg; centre (0.000, 0.000, 0.310), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.040, -0.050, 0.000)..(0.040, 0.050, 0.620); rests on the ground, fixed in place\n- axle: cylinder radius 0.008 m, length 0.120 m, steel, mass 0.189 kg; centre (0.000, 0.060, 0.620), orientation (rx, ry, rz) (1.571, 0.000, 0.000) rad; extent (-0.008, 0.000, 0.612)..(0.008, 0.120, 0.628); rigidly fixed to 'column'\n- arm: capsule radius 0.012 m, length 0.160 m, wood, mass 0.052 kg; centre (0.000, 0.100, 0.700), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.012, 0.088, 0.608)..(0.012, 0.112, 0.792); hinge joint to 'axle' at (0.000, 0.100, 0.620), axis (0.000, 1.000, 0.000), bearing model, end stops [-0.600, 1.450] rad, torsion_soft spring relaxed at -0.300\n- cup: box 0.044 x 0.044 x 0.010 m, wood, mass 0.013 kg; centre (0.000, 0.100, 0.798), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.022, 0.078, 0.793)..(0.022, 0.122, 0.803); rigidly fixed to 'arm'\n- lip: box 0.010 x 0.044 x 0.036 m, wood, mass 0.010 kg; centre (0.025, 0.100, 0.819), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (0.020, 0.078, 0.801)..(0.030, 0.122, 0.837); rigidly fixed to 'cup'\n- striker: box 0.016 x 0.090 x 0.028 m, wood, mass 0.026 kg; centre (0.000, 0.150, 0.710), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.008, 0.105, 0.696)..(0.008, 0.195, 0.724); rigidly fixed to 'arm'\n- slug: box 0.044 x 0.056 x 0.044 m, steel, sealed, mass unknown (between 0.05 and 0.25 kg); centre (0.034, 0.100, 0.700), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (0.012, 0.072, 0.678)..(0.056, 0.128, 0.722); slide joint to 'arm' at (0.014, 0.100, 0.700), axis (0.000, 0.000, 1.000), rail model, end stops [-0.045, 0.045] m\n- stop_post: box 0.040 x 0.060 x 0.750 m, concrete, mass 4.320 kg; centre (-0.040, 0.160, 0.375), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.060, 0.130, 0.000)..(-0.020, 0.190, 0.750); rests on the ground, fixed in place\n- ball: sphere radius 0.016 m, steel, sealed, mass unknown (between 0.02 and 0.1 kg); centre (0.000, 0.100, 0.820), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.016, 0.084, 0.804)..(0.016, 0.116, 0.836); loose (free body), carried by 'cup' when it is set up\nActuators (command in [-1, 1]):\n- drive: motor_large driving 'arm'\nLatches (hold the joint at its starting value until released):\n- clamp: locks 'slug'\nSensors (Gaussian noise, standard deviation):\n- arm_angle: joint_angle of 'arm', noise 0.002\n- arm_rate: joint_velocity of 'arm', noise 0.01\n- ball_where: position of 'ball', noise 0.002\nVisual markers:\n- target: at (-1.050, 0.100, 0.000), radius 0.050 m\nPhysics: rigid bodies with soft contacts, gravity 9.81 m/s^2 along -z. Contact friction between two surfaces is the larger of their two coefficients. Unknowns of scope 'world' are properties of a material or of a catalog part model (bearing, rail, spring, motor type): they are identical in every device and every instance in this world. Unknowns of scope 'device' belong to this device and are drawn anew for every instance.\nBefore each run: joint of 'arm' is set to knob 'cock'; joint of 'slug' is set to knob 'shift'\nAction program (then all commands 0 until the end): phase 0: lasts 2 s; commands [drive = knob 'power']",
+  "knobs": [
+    {
+      "name": "cock",
+      "low": 0.15,
+      "high": 1.4,
+      "unit": "rad",
+      "description": "arm start angle, cocked away from the stop post"
+    },
+    {
+      "name": "power",
+      "low": -1.0,
+      "high": -0.12,
+      "unit": "command",
+      "description": "motor command held during the throw; it is negative because that is the direction that drives the arm toward the stop post"
+    },
+    {
+      "name": "shift",
+      "low": -0.045,
+      "high": 0.045,
+      "unit": "m",
+      "description": "where the slug is clamped on the rail before the run; positive moves it out towards the cup, negative moves it in towards the hinge"
+    }
+  ],
+  "sensors": [
+    {
+      "name": "arm_angle",
+      "kind": "joint_angle",
+      "part": "arm",
+      "noise": 0.002,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "arm_rate",
+      "kind": "joint_velocity",
+      "part": "arm",
+      "noise": 0.01,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "ball_where",
+      "kind": "position",
+      "part": "ball",
+      "noise": 0.002,
+      "rate_hz": 25.0
+    }
+  ],
+  "unknowns": [
+    {
+      "name": "damping.bearing",
+      "description": "bearing viscous damping",
+      "low": 0.002,
+      "high": 0.015,
+      "unit": "N*m*s/rad",
+      "scope": "world"
+    },
+    {
+      "name": "damping.rail",
+      "description": "rail viscous damping",
+      "low": 0.1,
+      "high": 0.8,
+      "unit": "N*s/m",
+      "scope": "world"
+    },
+    {
+      "name": "friction.concrete",
+      "description": "sliding friction coefficient of concrete",
+      "low": 0.4,
+      "high": 0.9,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "friction.steel",
+      "description": "sliding friction coefficient of steel",
+      "low": 0.15,
+      "high": 0.45,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "friction.wood",
+      "description": "sliding friction coefficient of wood",
+      "low": 0.25,
+      "high": 0.65,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "frictionloss.bearing",
+      "description": "bearing dry friction",
+      "low": 0.0005,
+      "high": 0.004,
+      "unit": "N*m",
+      "scope": "world"
+    },
+    {
+      "name": "frictionloss.rail",
+      "description": "rail dry friction",
+      "low": 0.05,
+      "high": 0.4,
+      "unit": "N",
+      "scope": "world"
+    },
+    {
+      "name": "gain.motor_large",
+      "description": "motor_large output per unit command",
+      "low": 1.5,
+      "high": 6.0,
+      "unit": "N*m",
+      "scope": "world"
+    },
+    {
+      "name": "rolling.concrete",
+      "description": "rolling resistance length of concrete",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m",
+      "scope": "world"
+    },
+    {
+      "name": "rolling.steel",
+      "description": "rolling resistance length of steel",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m",
+      "scope": "world"
+    },
+    {
+      "name": "stiffness.torsion_soft",
+      "description": "torsion_soft stiffness",
+      "low": 0.5,
+      "high": 3.0,
+      "unit": "N*m/rad",
+      "scope": "world"
+    },
+    {
+      "name": "ball_mass",
+      "description": "mass of the sealed launch ball",
+      "low": 0.02,
+      "high": 0.1,
+      "unit": "kg",
+      "scope": "device"
+    },
+    {
+      "name": "slug_mass",
+      "description": "mass of the sealed slug that rides the arm rail",
+      "low": 0.05,
+      "high": 0.25,
+      "unit": "kg",
+      "scope": "device"
+    }
+  ],
+  "outcome": {
+    "kind": "landing_point",
+    "part": "ball",
+    "axes": [
+      "x"
+    ],
+    "description": "the x coordinate(s) of 'ball' at the moment it first touches the ground",
+    "noise": 0.003,
+    "goal_space": [
+      [
+        -1.62,
+        -1.02
+      ]
+    ],
+    "tolerance": 0.055
+  },
+  "modifiable": [
+    {
+      "name": "stop_post.posx",
+      "current": -0.04,
+      "low": -0.07,
+      "high": -0.034
+    },
+    {
+      "name": "striker.posz",
+      "current": 0.71,
+      "low": 0.69,
+      "high": 0.73
+    }
+  ],
+  "protocol": {
+    "pretest_goals": 3,
+    "budget": 62,
+    "probe_every": 10,
+    "exam_goals": 8,
+    "horizon": 3.0
+  },
+  "rules": "Protocol (enforced by the lab tool):\n1. Pretest: you get 3 goals one at a time and must choose knob values for each\n   before running any experiment on this device. Results are revealed only at the end.\n2. Lab: up to 62 experiments. Every experiment requires your prediction of the\n   outcome before you see the result. Every 10th experiment is chosen by the referee:\n   you are told the knob values, you predict, then you see the result.\n3. Theory: submit predict.py defining predict(knobs: dict, visible: dict) -> list[float],\n   your model of the outcome. `visible` holds the modifiable dimensions listed below; the\n   referee may evaluate your model with different values for them, without letting you\n   experiment. Also submit your estimates of the unknown quantities with 90% intervals.\n4. Exam: 8 goals one at a time, one attempt each, no experiments. Results are\n   revealed only at the end.\n5. Field report: optional tickets about the interface (bugs, ambiguity, suspected\n   unsolvability). Tickets go to the device builder; they cannot contain answers.\nOutcome is a failure if the run status is not \"ok\" (e.g. the part never landed, or was\nstill moving at the end of the run).",
+  "changelog": [
+    "new device 'spring_stop_catapult' replaces 'stop_catapult'",
+    "part changed: arm",
+    "part changed: slug",
+    "part changed: striker",
+    "sensor removed: ball_speed",
+    "latch added: clamp",
+    "knobs changed: ['cock', 'power', 'shift']",
+    "experiment budget 80 -> 62"
+  ]
+}

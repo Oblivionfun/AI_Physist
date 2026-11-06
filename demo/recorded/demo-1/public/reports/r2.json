@@ -1,0 +1,103 @@
+{
+  "round": 2,
+  "device_version": 2,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=0.958 threshold=0.8. privileged oracle hit 46/48 goals under actuation noise (95% CI 0.86-0.99)",
+    "C0 timestep convergence: PASS value=0.176 threshold=1. halving the timestep moves solving outcomes by 0.18 x tolerance",
+    "C1b robustness: PASS value=0.958 threshold=0.6. 138/144 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.240 threshold=0.3. over the prior, solving with prior-centre parameters hits 23/96 goals (95% CI 0.17-0.33; in this run's world: 0/24) BORDERLINE: the interval straddles the threshold, so the referee's decision can go either way; add margin",
+    "C2 necessity (single fixed action): PASS value=0.207 threshold=0.3. the best single action reaches 21% of goals",
+    "C3 identifiability (posterior predictive): PASS value=0.000 threshold=0.5. after 62 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 5.72 x)",
+    "C3 learnability (gray-box reference learner): PASS value=0.875 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 62 experiments, hit 7/8 goals"
+  ],
+  "reference_learner_success": 0.875,
+  "oracle_success": 0.9583333333333334,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        5.110624861295339,
+        0.4173038246981342
+      ],
+      "probe_errors_over_tol": [
+        1.5270956950251924,
+        7.813674475778127,
+        3.7908464371833905,
+        5.701307823032269,
+        0.5322344597405851,
+        2.2213478412740106
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.75,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.0,
+        "modified striker.posz=0.726": 0.625
+      },
+      "failure_tags": [
+        "budget_exhausted",
+        "modification_fail"
+      ]
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 62,
+      "budget": 62,
+      "prediction_error_first_vs_last": [
+        1.3523798023466411,
+        7.662508071986274
+      ],
+      "probe_errors_over_tol": [
+        27.86681487205047,
+        59.225997494085156,
+        10.422429018365714,
+        3.0596532203662137,
+        3.0413761993623396,
+        8.694976965876869
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.5,
+        "extrapolation": null,
+        "modified stop_post.posx=-0.064": 0.0,
+        "modified striker.posz=0.726": 0.5
+      },
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ]
+    }
+  ],
+  "learnability": 0.0,
+  "swap_test": {
+    "A_on_A": 0.75,
+    "B_on_B": 0.5,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "stop_post.posx": 1.8010099386518996,
+      "striker.posz": 0.6302546945812186
+    },
+    "blackbox_exam_success": 0.75
+  },
+  "tickets": [
+    {
+      "category": "interface_bug",
+      "text": "Every lab command prints repeated `_emit_encoded:5: can't create temp file for here document: operation not permitted` messages after otherwise successful output."
+    },
+    {
+      "category": "interface_bug",
+      "text": "Each command prints repeated _emit_encoded errors because it cannot create a temporary here-document file, although the command otherwise succeeds."
+    }
+  ],
+  "guidance": "Learner exam success 100% is above the target band 30%-80%: the next version should be harder in a new dimension."
+}
