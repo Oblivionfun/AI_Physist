@@ -7,7 +7,9 @@ C1  existence: the privileged oracle hits goals under actuation noise.
 C1b robustness: oracle solutions survive +-1 % knob perturbations (PHYRE "stable" solves).
 C2  necessity: prior-nominal parameters and the single best fixed action both fail.
 C3  identifiability: (a) posterior predictive uncertainty after a budget of probes is below
-    half the tolerance; (b) a gray-box reference learner succeeds within budget.
+    half the tolerance; (b) a gray-box reference learner succeeds within budget; (c) every
+    declared modifiable dimension moves outcomes enough to separate physical models from curve
+    fits that ignore it.
 """
 
 from __future__ import annotations
@@ -21,6 +23,8 @@ from mlab.catalog.priors import Prior
 from mlab.construct.checks import check_device, check_task
 from mlab.construct.compile import CompiledDevice, compile_device
 from mlab.construct.ir import PhaseIR, Submission, TaskIR
+from mlab.construct.modify import mod_key, visible_params
+from mlab.referee.modification import DISCRIMINATION, modification_effect, modified_value
 from mlab.referee.oracle import GenericOracle, knobs_to_unit, sobol_points, unit_to_knobs, usable
 from mlab.referee.reference import FitBudget, gray_box_fit
 from mlab.referee.stats import decide, point_decision, wilson
@@ -42,6 +46,7 @@ THRESHOLDS = {
     "C2_fixed": 0.3,
     "C3_predictive": 0.5,
     "C3_reference": 0.7,
+    "C3_modification": DISCRIMINATION,
     "C0_energy": 0.02,
     "C0_dt": 1.0,
 }
@@ -59,7 +64,7 @@ class CertProfile:
     robust_step: float = 0.01
     fisher_probes: int = 16
     fisher_step: float = 0.05
-    reference_instances: int = 1
+    reference_instances: int = 2
     reference_max_keys: int = 4
     reference_fit: FitBudget = field(default_factory=FitBudget)
     coverage_goals: int = 256
@@ -77,9 +82,7 @@ FAST = CertProfile(
     table_per_dim=24,
     refine_evals=20,
     fisher_probes=8,
-    reference_max_keys=3,
-    reference_fit=FitBudget(search_points=16, search_subset=8, fit_subset=12, refine_starts=1,
-                            refine_evals=24),
+    reference_instances=1,
     coverage_goals=256,
     physics_samples=2,
     prior_draws=16,
@@ -92,6 +95,7 @@ TEST = CertProfile(
     table_per_dim=16,
     refine_evals=15,
     fisher_probes=6,
+    reference_instances=1,
     reference_max_keys=2,
     reference_fit=FitBudget(search_points=8, search_subset=6, fit_subset=8, refine_starts=1,
                             refine_evals=12),
@@ -194,7 +198,8 @@ class Certifier:
             for d in self.devs
         ]
         steps = [self._c0_physics, self._c1_existence, self._c0_timestep, self._c1b_robustness,
-                 self._c2_nominal, self._c2_fixed, self._c3_predictive, self._c3_reference]
+                 self._c2_nominal, self._c2_fixed, self._c3_modification, self._c3_predictive,
+                 self._c3_reference]
         for step in steps:
             verdict = step()
             if stop_on_fail and not verdict.passed:
@@ -422,9 +427,36 @@ class Certifier:
                             "hidden quantities well enough: add informative sensors, lower their "
                             "noise, or raise the budget"))
 
+    def _c3_modification(self) -> Verdict:
+        thr = THRESHOLDS["C3_modification"]
+        if not self.task.modifiable:
+            return self._add("C3", "modification test", "pass", None, thr,
+                             "no modifiable dimensions declared: theories will not be tested on "
+                             "modified devices")
+        effects = modification_effect(self.sub, self.devs[0], self.rng)
+        self.sims += 6 * (1 + len(effects))
+        self.cert.stats["modification_effect_over_tol"] = effects
+        vis = visible_params(self.device, self.task)
+        tested = {mod_key(m): modified_value(m, vis[mod_key(m)]) for m in self.task.modifiable}
+        inert = {k: v for k, v in effects.items() if v is None or v < thr}
+        known = [v for v in effects.values() if v is not None]
+        worst = min(known) if known else None
+        if inert:
+            parts = [f"'{k}' at its tested value {tested[k]:.4g} "
+                     + ("gives no valid outcome" if v is None else f"moves outcomes by {v:.2f} x tolerance")
+                     for k, v in inert.items()]
+            return self._add("C3", "modification test", "fail", worst, thr,
+                             "; ".join(parts) + ": a theory that ignores the modification would "
+                             "score as well as one that models it. The referee tests each dimension "
+                             "80% of the way to its farther bound; choose a range where it stays "
+                             "consequential there, or drop it")
+        return self._add("C3", "modification test", "pass", worst, thr,
+                         f"every modifiable dimension moves outcomes by at least {worst:.2f} x "
+                         "tolerance at its tested value")
+
     def _c3_reference(self) -> Verdict:
         k = n = 0
-        errors = []
+        errors, per_fit = [], []
         nominal = nominal_instance(self.device)
         for i in range(min(self.p.reference_instances, len(self.devs))):
             dev = self.devs[i]
@@ -438,17 +470,22 @@ class Certifier:
             est_dev = compile_device(self.device, fit.theta_hat)
             oracle = GenericOracle(est_dev, self.task, self.rng, self.p.table_per_dim,
                                    self.p.refine_evals)
-            for goal in _goals(self.task, self.p.n_goals, self.rng):
-                k += self._eval(dev, oracle.solve(goal), goal, 1)
-                n += 1
+            goals = _goals(self.task, self.p.n_goals, self.rng)
+            hits = sum(self._eval(dev, oracle.solve(goal), goal, 1) for goal in goals)
+            per_fit.append(f"{hits}/{len(goals)}")
+            k += hits
+            n += len(goals)
             self.sims += oracle.sim_count
         decision = point_decision(k, n, THRESHOLDS["C3_reference"], at_least=True)
         self.cert.stats["reference_success"] = k / n
+        self.cert.stats["reference_fit_hits"] = per_fit
         self.cert.stats["reference_unit_error"] = errors
         return self._add("C3", "learnability (gray-box reference learner)", decision, k / n,
                          THRESHOLDS["C3_reference"],
                          f"a learner that knows the structure but not the values, using only the "
-                         f"public interface and {self.task.budget} experiments, hit {k}/{n} goals")
+                         f"public interface and {self.task.budget} experiments, hit {k}/{n} goals "
+                         f"(independent fits: {', '.join(per_fit)}; goals within one fit share its "
+                         "errors)")
 
 
 def certify(submission: Submission, world: dict[str, float], rng: np.random.Generator,

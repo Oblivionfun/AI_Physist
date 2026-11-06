@@ -58,7 +58,7 @@ def build_task(
         goal_space=[GoalDimIR(low=goal[0], high=goal[1])],
         tolerance=tolerance,
         budget=40,
-        modifiable=[ModifiableIR(part="block", field="posx", low=-0.232, high=-0.19)],
+        modifiable=[ModifiableIR(part="block", field="posx", low=-0.232, high=-0.10)],
     )
 
 

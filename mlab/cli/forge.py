@@ -139,7 +139,9 @@ def docs() -> str:
             f"(over the prior); one fixed action reaches <= {THRESHOLDS['C2_fixed']:.0%} of goals."),
             (f"C3 identifiability: after the budget, outcome uncertainty < {THRESHOLDS['C3_predictive']:g} x "
             f"tolerance, and a gray-box learner (knows your structure, not the values) hits >= "
-            f"{THRESHOLDS['C3_reference']:.0%}."),
+            f"{THRESHOLDS['C3_reference']:.0%}; each modifiable dimension, moved 80% of the way to "
+            f"its farther bound, shifts outcomes by >= {THRESHOLDS['C3_modification']:g} x tolerance "
+            "(otherwise ignoring it would score as well as modelling it)."),
             "Rejected submissions come back with the failing check and a suggested fix.", "",
             "## What the learner gets",
             (f"The generated manual, knobs, sensors and unknown ranges; {PRETEST_GOALS} pretest goals before "

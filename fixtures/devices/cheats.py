@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from fixtures.devices import pendulum_striker, spring_launcher
 from mlab.construct import Builder, Fixed, Hinge, Submission
-from mlab.construct.ir import GoalDimIR, KnobIR, OutcomeIR, SetupIR, TaskIR
+from mlab.construct.ir import GoalDimIR, KnobIR, ModifiableIR, OutcomeIR, SetupIR, TaskIR
 
 
 @dataclass(frozen=True)
@@ -27,6 +27,7 @@ class CertificateCheat:
     name: str
     expected_codes: tuple[str, ...]
     submission: Callable[[], Submission]
+    expected_check: str = ""
 
 
 def _floating_base():
@@ -96,6 +97,15 @@ def _turntable() -> Submission:
     return Submission(device=b.finish(), task=task)
 
 
+def _inert_modification() -> Submission:
+    """The flat plunger face pushes along x wherever the ball sits across it, so moving the
+    ball sideways leaves the landing x unchanged: a theory that ignores it scores as well."""
+    sub = spring_launcher.submission()
+    task = sub.task.model_copy(
+        update={"modifiable": [ModifiableIR(part="ball", field="posy", low=-0.02, high=0.02)]})
+    return Submission(device=sub.device, task=task)
+
+
 CERTIFICATE_CHEATS = [
     CertificateCheat(
         "unreachable goals", ("C1",),
@@ -113,4 +123,6 @@ CERTIFICATE_CHEATS = [
             task=pendulum_striker.build_task(goal=(1.0, 1.4), knob_range=(0.2, 1.65)),
         ),
     ),
+    CertificateCheat("inert modifiable dimension", ("C3",), _inert_modification,
+                     expected_check="modification test"),
 ]

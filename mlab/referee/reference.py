@@ -25,11 +25,15 @@ from mlab.sim.runner import simulate
 
 @dataclass(frozen=True)
 class FitBudget:
+    """Compute budget of the parameter fit (simulations, not experiments). Below roughly
+    3 x 80 Nelder-Mead evaluations the fit fails on identifiable devices often enough to make
+    C3 a coin flip (D-017)."""
+
     search_points: int = 32
     search_subset: int = 12
     fit_subset: int = 20
-    refine_starts: int = 2
-    refine_evals: int = 40
+    refine_starts: int = 3
+    refine_evals: int = 80
 
 
 @dataclass

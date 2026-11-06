@@ -20,6 +20,7 @@ def test_certificate_cheats_fail_at_expected_gate(cheat, world):
     cert = certify(cheat.submission(), world, np.random.default_rng(3), TEST)
     assert not cert.passed, cert.report()
     assert cert.first_failure.code in cheat.expected_codes, cert.report()
+    assert cheat.expected_check in cert.first_failure.title, cert.report()
 
 
 def test_spring_launcher_certifies(world):

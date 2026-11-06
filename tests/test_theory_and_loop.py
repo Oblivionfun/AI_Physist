@@ -5,11 +5,14 @@ from pathlib import Path
 import numpy as np
 
 from fixtures.devices import pendulum_striker
+from fixtures.devices.cheats import _inert_modification
 from mlab.agents.builders.reference import ReferenceBuilder
 from mlab.catalog import sample_world
 from mlab.construct import compile_device
 from mlab.orchestrator import Orchestrator, RecordedBuilder, RunConfig, offline_learner
 from mlab.referee.channel import verify
+from mlab.referee.metrics import InstanceMetrics, failure_tags
+from mlab.referee.report import guidance
 from mlab.referee.theory_eval import QuerySet, build_query_sets, run_theory, score
 from mlab.referee.theta import twin_instances
 
@@ -45,6 +48,26 @@ def test_modified_query_set_changes_ground_truth():
     mod = next(s for s in sets if s.name.startswith("modified"))
     assert [q["knobs"] for q in base.queries] == [q["knobs"] for q in mod.queries]
     assert base.queries[0]["visible"] != mod.queries[0]["visible"]
+    assert mod.discriminating and mod.effect_over_tol >= 1.5
+
+
+def test_inert_modification_is_not_counted_as_a_theory_failure():
+    sub = _inert_modification()
+    world = sample_world(np.random.default_rng(7))
+    dev = compile_device(sub.device, twin_instances(world, sub.device, np.random.default_rng(1))[0])
+    lab = [{"compression": v} for v in np.linspace(-0.12, -0.04, 8)]
+    sets = build_query_sets(sub, dev, lab, np.random.default_rng(2), n=4)
+    mod = next(s for s in sets if s.name.startswith("modified"))
+    assert not mod.discriminating and "non-discriminating" in mod.note
+    ignoring = score(mod, sets[0].truths, sub.task.tolerance)
+    assert ignoring.hit_rate == 1.0 and not ignoring.discriminating
+    wrong = score(mod, [[t[0] + 1.0] for t in mod.truths], sub.task.tolerance)
+    theory = {"in_distribution": {"hit_rate": 1.0, "answered": 4, "n": 4},
+              mod.name: {"hit_rate": wrong.hit_rate, "answered": 4, "n": 4,
+                         "discriminating": wrong.discriminating}}
+    m = InstanceMetrics("A", 0, 3, 8, 8, [], {"ok": 8}, 20, 40, [], [], theory=theory)
+    assert "modification_fail" not in failure_tags(m)
+    assert "ball.posy" in guidance(0.9, 0.0, 1.0, mod_effects={"ball.posy": mod.effect_over_tol})
 
 
 def test_offline_loop_runs_one_round(tmp_path):

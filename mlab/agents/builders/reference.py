@@ -79,7 +79,7 @@ def sealed_pendulum(budget: int) -> Submission:
         budget=budget,
         escalation=["new mechanism: impact transfer", "device-specific hidden mass",
                     "smaller budget"],
-        modifiable=[ModifiableIR(part="block", field="posx", low=-0.232, high=-0.19)],
+        modifiable=[ModifiableIR(part="block", field="posx", low=-0.232, high=-0.10)],
     )
     return Submission(device=b.finish(), task=task)
 

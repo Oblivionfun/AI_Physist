@@ -24,9 +24,10 @@ from mlab.referee.channel import ChannelLog
 from mlab.referee.leak import scan
 from mlab.referee.manual import build_card
 from mlab.referee.metrics import compute_metrics
+from mlab.referee.modification import modification_effect
 from mlab.referee.report import build_report
 from mlab.referee.session import LearnerSession
-from mlab.referee.theory_eval import build_query_sets, modification_effect, run_theory, score
+from mlab.referee.theory_eval import build_query_sets, run_theory, score
 from mlab.referee.theta import hidden_priors, twin_instances
 from mlab.sandbox.audit import make_canary, scan_tree
 from mlab.sandbox.policies import ensure_learner_venv
@@ -169,6 +170,8 @@ class Orchestrator:
         scores = [score(q, self.theory(rec.theory_code, q.queries), sub.task.tolerance)
                   if rec.theory_code else score(q, None, sub.task.tolerance) for q in qsets]
         metrics = compute_metrics(label, sess, scores, hidden_priors(sub.device), theta)
+        last_invalid = getattr(agent, "last_invalid", None)
+        metrics.invalid = last_invalid() if callable(last_invalid) else None
         return sess, qsets, metrics, seconds
 
     def run(self) -> dict:
@@ -177,6 +180,7 @@ class Orchestrator:
         prev_theory: str | None = None
         version = 0
         rounds = []
+        twin_sessions: list[dict] = []
         for r in range(1, self.cfg.rounds + 1):
             rejection: str | None = None
             sub: Submission | None = None
@@ -222,6 +226,7 @@ class Orchestrator:
             twin = self.learner.fork()
             sess_a, qs_a, m_a, sec_a = self._session("A", sub, devs[0], thetas[0], card, self.learner)
             sess_b, qs_b, m_b, sec_b = self._session("B", sub, devs[1], thetas[1], card, twin)
+            twin_sessions.extend(getattr(twin, "history", []))
             tol = sub.task.tolerance
             code_a, code_b = sess_a.record.theory_code, sess_b.record.theory_code
             hr = self.theory.hit_rate
@@ -263,9 +268,10 @@ class Orchestrator:
                 "swap": swap, "old_theory": old, "controls": controls,
                 "learner_seconds": [round(sec_a, 1), round(sec_b, 1)],
             })
+            invalid = [f"{m.label}: {m.invalid}" for m in (m_a, m_b) if m.invalid]
             self.log(f"[round {r}] v{version} {sub.device.name}: pretest {m_a.pretest_rate:.0%}/"
                      f"{m_b.pretest_rate:.0%}, exam {m_a.exam_rate:.0%}/{m_b.exam_rate:.0%}, swap {swap}, "
-                     f"controls {controls}")
+                     f"controls {controls}" + (f", INVALID sessions {invalid}" if invalid else ""))
             prev_sub, prev_theory = sub, code_a
         summary = {"run_id": self.cfg.run_id, "builder": self.builder.name,
                    "learner": self.learner.name, "profile": self.cfg.profile, "rounds": rounds,
@@ -273,6 +279,8 @@ class Orchestrator:
         for agent, key in ((self.builder, "builder_sessions"), (self.learner, "learner_sessions")):
             if hasattr(agent, "history"):
                 summary[key] = agent.history
+        if twin_sessions:
+            summary["learner_twin_sessions"] = twin_sessions
         _write(self.dirs.referee / "summary.json", summary)
         return summary
 

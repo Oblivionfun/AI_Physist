@@ -28,6 +28,7 @@ class InstanceMetrics:
     theory: dict[str, dict] = field(default_factory=dict)
     belief: dict[str, dict] = field(default_factory=dict)
     tickets: list[dict] = field(default_factory=list)
+    invalid: str | None = None
 
     @property
     def exam_rate(self) -> float:
@@ -94,13 +95,17 @@ def compute_metrics(label: str, session: LearnerSession, theory: list[TheoryScor
         probe_pred_err=[(r.index, _pred_err(r.prediction, r.true_outcome, tol))
                         for r in rec.lab if r.probe],
         theory={s.name: {"hit_rate": s.hit_rate, "mean_abs_over_tol": s.mean_abs_over_tol,
-                         "n": s.n, "answered": s.answered, "note": s.note} for s in theory},
+                         "n": s.n, "answered": s.answered, "note": s.note,
+                         "effect_over_tol": s.effect_over_tol, "discriminating": s.discriminating}
+                for s in theory},
         belief=belief,
         tickets=[t.model_dump() for t in rec.tickets],
     )
 
 
 def failure_tags(m: InstanceMetrics) -> list[str]:
+    if m.invalid:
+        return ["invalid_session"]
     tags = []
     if m.experiments_used >= m.budget:
         tags.append("budget_exhausted")
@@ -115,7 +120,8 @@ def failure_tags(m: InstanceMetrics) -> list[str]:
         if ext.get("hit_rate") is not None and ext["hit_rate"] < 0.5:
             tags.append("extrapolation_fail")
         for name, s in m.theory.items():
-            if name.startswith("modified") and s.get("hit_rate") is not None and s["hit_rate"] < 0.5:
+            if (name.startswith("modified") and s.get("discriminating", True)
+                    and s.get("hit_rate") is not None and s["hit_rate"] < 0.5):
                 tags.append("modification_fail")
                 break
     elif ind.get("hit_rate") is not None:
