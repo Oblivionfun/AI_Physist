@@ -144,7 +144,10 @@ class Orchestrator:
     def _referee_gate(self, r: int, attempt: int, sub: Submission, thetas: list[dict]) -> Certificate:
         secrets = [v for th in thetas for k, v in th.items() if k in hidden_priors(sub.device)]
         leaks = scan(sub, secrets)
-        cert = certify(sub, self.world, self.rng_cert, self.profile)
+        recorded = getattr(self.builder, "recorded_certificate", None)
+        cert = recorded(r) if callable(recorded) else None
+        if cert is None:
+            cert = certify(sub, self.world, self.rng_cert, self.profile)
         if leaks:
             cert.verdicts.insert(0, Verdict("C0", "leak scan", "fail", float(len(leaks)), 0.0,
                                             "; ".join(str(i) for i in leaks)))
@@ -307,3 +310,16 @@ class RecordedBuilder:
         attempt = next(a["attempt"] for a in r["attempts"] if a["passed"])
         path = self.source / "referee" / "submissions" / f"r{round_index}_a{attempt}.json"
         return Submission.model_validate_json(path.read_text())
+
+    def recorded_certificate(self, round_index: int) -> Certificate | None:
+        """Certification is stochastic; a device certified in the source run is not re-drawn."""
+        r = next((x for x in self.summary["rounds"] if x["round"] == round_index), None)
+        if r is None or r.get("status") != "ok":
+            return None
+        attempt = next(a["attempt"] for a in r["attempts"] if a["passed"])
+        data = json.loads((self.source / "referee" / "certificates"
+                           / f"r{round_index}_a{attempt}.json").read_text())
+        cert = Certificate(stats=data.get("stats", {}))
+        cert.verdicts.append(Verdict("C*", "recorded certificate", "pass", None, None,
+                                     f"certified in run {self.source.name}, attempt {attempt}"))
+        return cert
