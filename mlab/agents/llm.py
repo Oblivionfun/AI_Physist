@@ -8,6 +8,7 @@ import shutil
 import stat
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from mlab.agents.backend import AgentResult, CursorAgentBackend, agent_env
@@ -30,7 +31,47 @@ LEARNER_NUDGE = ("Your session is not finished: `./lab status` is not 'done' yet
 BUILDER_NUDGE = ("No submission was found in outbox/ and your session time is almost over. "
                  "Submit your best design now with `./forge submit device.py`; a rejected submission "
                  "still returns a detailed report, an empty one ends the round.")
+RECONNECT = ("The connection to the model service dropped and has been restored. Check where you "
+             "are and continue from there.")
 MIN_NUDGE_SECONDS = 180
+INFRA_WAITS = (30.0, 90.0, 240.0)
+
+
+def _drive(first: Callable[[float], AgentResult], follow: Callable[[str, str, float], AgentResult],
+           finished: Callable[[], bool], nudge: str, max_nudges: int, deadline: float,
+           log: Callable[[str], None]) -> list[AgentResult]:
+    """Run a session to completion: nudge an agent that stopped early (at most max_nudges
+    times), and retry after infrastructure failures (network, service) with back-off without
+    spending nudges. follow(prompt, session_id, timeout) resumes; first(timeout) starts anew."""
+    runs = [first(deadline - time.time())]
+    nudges = retries = 0
+    while not finished() and deadline - time.time() > MIN_NUDGE_SECONDS:
+        last = runs[-1]
+        if last.infra_error:
+            if retries >= len(INFRA_WAITS):
+                break
+            wait = min(INFRA_WAITS[retries], deadline - time.time() - MIN_NUDGE_SECONDS)
+            retries += 1
+            log(f"infrastructure error ({last.infra_error}); retry {retries} in {wait:.0f}s")
+            time.sleep(max(0.0, wait))
+            left = deadline - time.time()
+            runs.append(follow(RECONNECT, last.session_id, left) if last.session_id else first(left))
+            continue
+        if nudges >= max_nudges or not last.session_id:
+            break
+        nudges += 1
+        log("not finished, nudging")
+        runs.append(follow(nudge, last.session_id, deadline - time.time()))
+    return runs
+
+
+def invalid_reason(runs: list[AgentResult], finished: bool) -> str | None:
+    """A session that ended unfinished because of infrastructure failures carries no evidence
+    about the agent and must not be scored as the agent's failure."""
+    errors = [r.infra_error for r in runs if r.infra_error]
+    if finished or not errors:
+        return None
+    return f"infrastructure: {errors[-1]}"
 
 
 def _install_script(dst: Path, python: Path, body: str) -> None:
@@ -103,25 +144,34 @@ class LLMLearner:
             env = agent_env(self.workspace, tmp, [self.workspace, python.parent])
             prompt = load("learner") + f"\nSession {tag}. Begin with `./lab card`.\n"
             transcript = self.transcripts / f"learner_{tag}.jsonl"
-            runs: list[AgentResult] = [self.backend.run(prompt, self.workspace, profile, transcript,
-                                                        env, timeout=0.85 * budget)]
-            while (lab.status()["phase"] != "done" and len(runs) <= self.max_nudges
-                   and runs[-1].session_id and deadline - time.time() > MIN_NUDGE_SECONDS):
-                self.log(f"  learner {tag}: phase {lab.status()['phase']}, nudging")
-                runs.append(self.backend.run(LEARNER_NUDGE, self.workspace, profile, transcript, env,
-                                             resume=runs[-1].session_id,
-                                             timeout=deadline - time.time()))
+
+            def first(left: float) -> AgentResult:
+                return self.backend.run(prompt, self.workspace, profile, transcript, env,
+                                        timeout=min(left, 0.85 * budget))
+
+            def follow(text: str, session: str, left: float) -> AgentResult:
+                return self.backend.run(text, self.workspace, profile, transcript, env,
+                                        resume=session, timeout=left)
+
+            runs = _drive(first, follow, lambda: lab.status()["phase"] == "done", LEARNER_NUDGE,
+                          self.max_nudges, deadline,
+                          lambda msg: self.log(f"  learner {tag}: phase {lab.status()['phase']}, {msg}"))
         finally:
             server.stop()
             shutil.rmtree(tmp, ignore_errors=True)
             (self.workspace / ".lab.json").unlink(missing_ok=True)
+        phase = lab.status()["phase"]
+        invalid = invalid_reason(runs, phase == "done")
         self.history.append({
-            "tag": tag, "final_phase": lab.status()["phase"],
+            "tag": tag, "final_phase": phase, "invalid": invalid,
             "runs": [r.__dict__ for r in runs], "rpc_calls": len(calls),
             "rpc_errors": sum(1 for _, ok in calls if not ok),
         })
-        self.log(f"  learner {tag}: finished in phase {lab.status()['phase']} after {len(calls)} lab "
-                 f"calls, {sum(r.seconds for r in runs):.0f}s")
+        self.log(f"  learner {tag}: finished in phase {phase} after {len(calls)} lab calls, "
+                 f"{sum(r.seconds for r in runs):.0f}s" + (f" - INVALID ({invalid})" if invalid else ""))
+
+    def last_invalid(self) -> str | None:
+        return self.history[-1]["invalid"] if self.history else None
 
 
 class LLMBuilder:
@@ -182,20 +232,25 @@ class LLMBuilder:
             env = agent_env(ws, tmp, [ws, python.parent])
             prompt = load("builder") + f"\nRound {round_index}. Read inbox/{inbox} first.\n"
             transcript = self.transcripts / f"builder_call{self.calls:02d}.jsonl"
-            runs = [self.backend.run(prompt, ws, profile, transcript, env,
-                                     timeout=(1 - self.NUDGE_RESERVE) * budget)]
-            while (not out.exists() and len(runs) <= self.max_nudges and runs[-1].session_id
-                   and deadline - time.time() > MIN_NUDGE_SECONDS):
-                self.log(f"  builder call {self.calls}: no submission yet, nudging")
-                runs.append(self.backend.run(BUILDER_NUDGE, ws, profile, transcript, env,
-                                             resume=runs[-1].session_id,
-                                             timeout=deadline - time.time()))
+
+            def first(left: float) -> AgentResult:
+                return self.backend.run(prompt, ws, profile, transcript, env,
+                                        timeout=min(left, (1 - self.NUDGE_RESERVE) * budget))
+
+            def follow(text: str, session: str, left: float) -> AgentResult:
+                return self.backend.run(text, ws, profile, transcript, env, resume=session,
+                                        timeout=left)
+
+            runs = _drive(first, follow, out.exists, BUILDER_NUDGE, self.max_nudges, deadline,
+                          lambda msg: self.log(f"  builder call {self.calls}: {msg}"))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+        invalid = invalid_reason(runs, out.exists())
         self.history.append({"call": self.calls, "round": round_index, "inbox": inbox,
-                             "runs": [r.__dict__ for r in runs], "submitted": out.exists()})
+                             "runs": [r.__dict__ for r in runs], "submitted": out.exists(),
+                             "invalid": invalid})
         self.log(f"  builder call {self.calls}: {'submitted' if out.exists() else 'no submission'} "
-                 f"after {sum(r.seconds for r in runs):.0f}s")
+                 f"after {sum(r.seconds for r in runs):.0f}s" + (f" - {invalid}" if invalid else ""))
         if not out.exists():
             return None
         try:

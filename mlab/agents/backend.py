@@ -14,6 +14,10 @@ from pathlib import Path
 
 from mlab.sandbox.policies import wrap
 
+# stderr markers of failures outside the agent's control (network, service availability).
+TRANSIENT_ERRORS = ("[unavailable]", "[resource_exhausted]", "ENOTFOUND", "EAI_AGAIN",
+                    "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "socket hang up")
+
 
 @dataclass
 class AgentResult:
@@ -24,6 +28,14 @@ class AgentResult:
     timed_out: bool
     tool_calls: int
     usage: dict = field(default_factory=dict)
+    infra_error: str | None = None
+
+
+def infra_error(exit_code: int | None, timed_out: bool, stderr: str) -> str | None:
+    if timed_out or exit_code in (0, None):
+        return None
+    return next((line.strip()[:200] for line in stderr.splitlines()
+                 if any(m in line for m in TRANSIENT_ERRORS)), None)
 
 
 def agent_env(workspace: Path, tmpdir: Path, extra_path: list[Path]) -> dict[str, str]:
@@ -90,6 +102,8 @@ class CursorAgentBackend:
             cmd += ["--resume", resume]
         cmd.append(prompt)
         transcript.parent.mkdir(parents=True, exist_ok=True)
+        err_path = transcript.with_suffix(".stderr")
+        err_offset = err_path.stat().st_size if err_path.exists() else 0
         t0 = time.time()
         timed_out = False
         # The agent's stdio must be pipes: its runtime stats stdio at start-up, and a file in a
@@ -98,8 +112,7 @@ class CursorAgentBackend:
                                 stderr=subprocess.PIPE, start_new_session=True)
         pumps = [
             threading.Thread(target=_pump, args=(proc.stdout, transcript), daemon=True),
-            threading.Thread(target=_pump, args=(proc.stderr, transcript.with_suffix(".stderr")),
-                             daemon=True),
+            threading.Thread(target=_pump, args=(proc.stderr, err_path), daemon=True),
         ]
         for p in pumps:
             p.start()
@@ -116,4 +129,10 @@ class CursorAgentBackend:
         for p in pumps:
             p.join(timeout=10)
         session_id, final, tools, usage = parse_stream(transcript)
-        return AgentResult(code, time.time() - t0, session_id, final, timed_out, tools, usage)
+        stderr = ""
+        if err_path.exists():
+            with err_path.open("rb") as f:
+                f.seek(err_offset)
+                stderr = f.read().decode(errors="ignore")
+        return AgentResult(code, time.time() - t0, session_id, final, timed_out, tools, usage,
+                           infra_error(code, timed_out, stderr))
