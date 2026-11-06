@@ -8,6 +8,7 @@ import argparse
 import json
 import socket
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -122,7 +123,11 @@ def main(argv=None):
             print("Changes since the previous version: " + "; ".join(card["changelog"]))
         print("\n" + card["rules"])
     elif args.cmd == "status":
-        print(json.dumps(call("status")))
+        status = call("status")
+        deadline = json.loads(CONFIG.read_text()).get("deadline")
+        if deadline:
+            status["minutes_left_in_session"] = round(max(0.0, deadline - time.time()) / 60, 1)
+        print(json.dumps(status))
     elif args.cmd == "goal":
         print(json.dumps(call("current_goal")))
     elif args.cmd == "answer":

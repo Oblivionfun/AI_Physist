@@ -79,7 +79,9 @@ class CursorAgentBackend:
         return f"cursor-agent:{self.model}"
 
     def run(self, prompt: str, workspace: Path, profile: Path, transcript: Path,
-            env: dict[str, str], resume: str | None = None) -> AgentResult:
+            env: dict[str, str], resume: str | None = None,
+            timeout: float | None = None) -> AgentResult:
+        limit = self.timeout if timeout is None else timeout
         cmd = [self.binary, "-p", "--output-format", "stream-json", "--model", self.model,
                "--workspace", str(workspace), "--trust", "--force", "--sandbox", "disabled"]
         if resume:
@@ -100,7 +102,7 @@ class CursorAgentBackend:
         for p in pumps:
             p.start()
         try:
-            code = proc.wait(timeout=self.timeout)
+            code = proc.wait(timeout=limit)
         except subprocess.TimeoutExpired:
             timed_out = True
             os.killpg(proc.pid, signal.SIGTERM)

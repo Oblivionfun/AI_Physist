@@ -25,7 +25,7 @@ def _run(args: argparse.Namespace) -> int:
     transcripts, profiles = dirs.referee / "transcripts", dirs.referee / "profiles"
     if args.builder == "cursor":
         builder = LLMBuilder(CursorAgentBackend(args.builder_model, timeout=args.timeout),
-                             cfg.root, transcripts, profiles)
+                             cfg.root, transcripts, profiles, cert_profile=args.profile)
     else:
         builder = ReferenceBuilder()
     if args.learner == "cursor":

@@ -150,12 +150,37 @@ def docs() -> str:
             "succeeds, your challenge can be brute-forced."), "",
             "## Commands",
             ("./forge docs | ./forge check device.py [--profile test|fast] | ./forge describe device.py | "
-            "./forge submit device.py"), "",
+             "./forge submit device.py. Every command prints the time left in your session; a session "
+             "that ends without a submission counts as a failed round."), "",
             "## Minimal example (API illustration only)",
             ("This builds without errors, but as a task it is rejected by C1: a released rod always "
             "comes to rest hanging down, so the goal angles are unreachable. Design your own device."),
             "```python", EXAMPLE, "```"]
     return "\n".join(out)
+
+
+SESSION = Path("forge.json")
+
+
+def session_info() -> dict:
+    """Written by the referee into the builder workspace: deadline and certification profile."""
+    try:
+        return json.loads(SESSION.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def time_banner() -> str:
+    deadline = session_info().get("deadline")
+    if not deadline:
+        return ""
+    left = deadline - time.time()
+    if left <= 0:
+        return "[time] the session deadline has passed: submit now with ./forge submit device.py"
+    msg = f"[time] {left / 60:.0f} min left in this session"
+    if left < 0.25 * session_info().get("budget_seconds", left * 4):
+        msg += " - submit your best certified design soon (./forge submit device.py)"
+    return msg
 
 
 def load(path: str) -> Submission:
@@ -180,12 +205,17 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_parser("docs")
     c = sp.add_parser("check")
     c.add_argument("path")
-    c.add_argument("--profile", choices=["test", "fast"], default="test")
+    c.add_argument("--profile", choices=["test", "fast"],
+                   default=session_info().get("profile", "fast"),
+                   help="defaults to the profile the referee uses in this run (capped at fast)")
     d = sp.add_parser("describe")
     d.add_argument("path")
     s = sp.add_parser("submit")
     s.add_argument("path")
     args = ap.parse_args(argv)
+    banner = time_banner()
+    if banner:
+        print(banner)
     if args.cmd == "docs":
         print(docs())
         return 0

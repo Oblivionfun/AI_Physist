@@ -1,5 +1,6 @@
 {
  "learner": "c8a99d2489eb61ce3f51d88c5da7576b1688f33d9807f4b5fabec4bd648224f8",
- "builder": "4f6b5668709ccb9859783e26c18c47630744666c88d6494ea9a707b66bc1dbbb",
- "frozen_at": "2026-11-06, before any LLM-built device existed"
+ "builder": "007b89f5e1e8859ba55ed2c52cf62a131c7fe90e3e4893e1698390793bc8f050",
+ "frozen_at": "2026-11-06, before any LLM-built device existed",
+ "builder_revised": "2026-11-06 D-014 (time budget rule)"
 }

@@ -324,14 +324,18 @@ class Certifier:
                 run_n += 1
         self.sims += oracle.sim_count
         decision = decide(k, n, THRESHOLDS["C2_nominal"], at_least=False)
-        if decision == "gray":
+        borderline = decision == "gray"
+        if borderline:
             decision = point_decision(k, n, THRESHOLDS["C2_nominal"], at_least=False)
+        lo, hi = wilson(k, n)
         self.cert.stats["nominal_success"] = k / n
         self.cert.stats["nominal_success_this_world"] = run_k / run_n
         return self._add("C2", "necessity (nominal parameters)", decision, k / n,
                          THRESHOLDS["C2_nominal"],
                          f"over the prior, solving with prior-centre parameters hits {k}/{n} goals "
-                         f"(in this run's world: {run_k}/{run_n})"
+                         f"(95% CI {lo:.2f}-{hi:.2f}; in this run's world: {run_k}/{run_n})"
+                         + (" BORDERLINE: the interval straddles the threshold, so the referee's "
+                            "decision can go either way; add margin" if borderline else "")
                          + ("" if decision == "pass" else "; the hidden quantities barely matter, "
                             "so no learning is needed: make the outcome depend on them more"))
 

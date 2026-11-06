@@ -17,4 +17,5 @@ Tools in this directory
 Rules
 - Only the referee sees your device. The learner sees the generated manual plus your goal text and knob descriptions. Never write numbers about unknown quantities in prose.
 - You cannot see anything about the learner except the referee's reports.
+- Your session has a time limit, and every `./forge` command prints the time left. Submit your best design before it runs out: a rejected submission still returns a detailed report, while a session that ends without a submission counts as a failed round. A local check takes up to a minute, so do not loop it many times.
 - Work autonomously: iterate with `./forge check` until it passes, then submit. Do not ask questions; nobody will answer.

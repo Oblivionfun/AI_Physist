@@ -114,9 +114,13 @@ class TheoryRunner:
         return score(qs, self(code, qs.queries), tol).hit_rate
 
 
+def _flush_print(*args) -> None:
+    print(*args, flush=True)
+
+
 class Orchestrator:
     def __init__(self, config: RunConfig, builder: BuilderAgent, learner: LearnerAgent,
-                 log=print):
+                 log=_flush_print):
         self.cfg = config
         self.builder = builder
         self.learner = learner
