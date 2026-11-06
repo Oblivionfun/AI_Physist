@@ -1,0 +1,49 @@
+abandoned_sliding_slug old_fast seed 3: REJECTED (31s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance: a theory that ignores the modification would score as well as one that models it. The referee tests each dimension 80% of the 
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 7.36 x)
+    C3 learnability (gray-box reference learner): PASS value=0.833 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 5/6 goals (independent fits: 5/6; goals within one fit share its errors
+abandoned_sliding_slug old_fast seed 1: REJECTED (32s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.46 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 4.15 x)
+    C3 learnability (gray-box reference learner): PASS value=0.833 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 5/6 goals (independent fits: 5/6; goals within one fit share its errors
+abandoned_sliding_slug old_fast seed 2: REJECTED (35s)
+    C3 modification test: FAIL value=0.911 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 1.01 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.91 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 5.65 x)
+    C3 learnability (gray-box reference learner): FAIL value=0.333 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 2/6 goals (independent fits: 2/6; goals within one fit share its errors
+abandoned_burst_coast old_fast seed 1: REJECTED (16s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.46 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.002 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 4.15 x)
+    C3 learnability (gray-box reference learner): FAIL value=0.333 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 2/6 goals (independent fits: 2/6; goals within one fit share its errors
+abandoned_burst_coast old_fast seed 2: REJECTED (18s)
+    C3 modification test: FAIL value=0.911 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 1.01 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.91 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.003 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 5.65 x)
+    C3 learnability (gray-box reference learner): PASS value=1.000 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 6/6 goals (independent fits: 6/6; goals within one fit share its errors
+abandoned_sliding_slug fast seed 1: REJECTED (83s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.46 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 4.15 x)
+    C3 learnability (gray-box reference learner): PASS value=0.833 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 5/6 goals (independent fits: 5/6; goals within one fit share its errors
+abandoned_burst_coast old_fast seed 3: REJECTED (14s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance: a theory that ignores the modification would score as well as one that models it. The referee tests each dimension 80% of the 
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 7.36 x)
+    C3 learnability (gray-box reference learner): PASS value=0.833 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 5/6 goals (independent fits: 5/6; goals within one fit share its errors
+abandoned_sliding_slug fast seed 3: REJECTED (78s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance: a theory that ignores the modification would score as well as one that models it. The referee tests each dimension 80% of the 
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 7.36 x)
+    C3 learnability (gray-box reference learner): PASS value=1.000 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 6/6 goals (independent fits: 6/6; goals within one fit share its errors
+abandoned_sliding_slug fast seed 2: REJECTED (84s)
+    C3 modification test: FAIL value=0.911 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 1.01 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.91 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 72 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 5.65 x)
+    C3 learnability (gray-box reference learner): PASS value=0.833 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 72 experiments, hit 5/6 goals (independent fits: 5/6; goals within one fit share its errors
+abandoned_burst_coast fast seed 1: REJECTED (43s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.46 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.002 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 4.15 x)
+    C3 learnability (gray-box reference learner): FAIL value=0.333 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 2/6 goals (independent fits: 2/6; goals within one fit share its errors
+abandoned_burst_coast fast seed 2: REJECTED (44s)
+    C3 modification test: FAIL value=0.911 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 1.01 x tolerance; 'striker.posz' at its tested value 0.726 moves outcomes by 0.91 x tolerance: a theory that ignores the modification would scor
+    C3 identifiability (posterior predictive): PASS value=0.003 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 5.65 x)
+    C3 learnability (gray-box reference learner): FAIL value=0.667 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 4/6 goals (independent fits: 4/6; goals within one fit share its errors
+abandoned_burst_coast fast seed 3: REJECTED (40s)
+    C3 modification test: FAIL value=0.000 threshold=1.5. 'stop_post.posx' at its tested value -0.064 moves outcomes by 0.00 x tolerance: a theory that ignores the modification would score as well as one that models it. The referee tests each dimension 80% of the 
+    C3 identifiability (posterior predictive): PASS value=0.001 threshold=0.5. after 56 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 7.36 x)
+    C3 learnability (gray-box reference learner): PASS value=1.000 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 56 experiments, hit 6/6 goals (independent fits: 6/6; goals within one fit share its errors
+DONE
