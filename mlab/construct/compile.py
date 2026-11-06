@@ -115,6 +115,14 @@ def compile_device(device: DeviceIR, theta: dict[str, float]) -> CompiledDevice:
     ET.SubElement(option, "flag", energy="enable", filterparent="disable")
     visual = ET.SubElement(mj, "visual")
     ET.SubElement(visual, "global", offwidth="1280", offheight="720")
+    ET.SubElement(visual, "headlight", ambient="0.45 0.45 0.45", diffuse="0.6 0.6 0.6",
+                  specular="0.1 0.1 0.1")
+    asset = ET.SubElement(mj, "asset")
+    ET.SubElement(asset, "texture", name="grid", type="2d", builtin="checker", width="256",
+                  height="256", rgb1="0.62 0.62 0.6", rgb2="0.55 0.55 0.53")
+    ET.SubElement(asset, "material", name="groundmat", texture="grid", texrepeat="10 10")
+    ET.SubElement(asset, "texture", name="sky", type="skybox", builtin="gradient", width="64",
+                  height="64", rgb1="0.85 0.9 0.95", rgb2="0.55 0.65 0.75")
     world = ET.SubElement(mj, "worldbody")
     ET.SubElement(world, "light", pos="0 -2 4", dir="0 0.4 -1", directional="true")
     ground_friction = theta[world_key("friction", GROUND_MATERIAL)]
@@ -125,7 +133,7 @@ def compile_device(device: DeviceIR, theta: dict[str, float]) -> CompiledDevice:
         name="ground",
         type="plane",
         size="20 20 0.1",
-        rgba=_fmt(MATERIALS[GROUND_MATERIAL].rgba),
+        material="groundmat",
         friction=_fmt([ground_friction, TORSIONAL_FRICTION, ground_rolling]),
     )
     for z in device.zones:

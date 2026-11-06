@@ -13,6 +13,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from mlab.agents.backend import parse_stream
+from mlab.analysis.replay import replay_round
 from mlab.orchestrator import default_runs_dir
 
 PROJECT = Path(__file__).resolve().parents[2]
@@ -158,6 +159,13 @@ def build(run_id: str, runs_dir: Path | None = None, dest: Path | None = None) -
                          f"({s['rpc_errors']} rejected), {sum(x['seconds'] for x in s['runs']):.0f} s")
     figs = [_fig_prediction(rounds, dest / "figures"), _fig_scores(rounds, dest / "figures")]
     lines += ["", "## Figures", ""] + [f"![{f.stem}](figures/{f.name})" for f in figs if f]
+    replays: list[Path] = []
+    for r in rounds:
+        if r.get("status") == "ok" and (root / "referee" / "instances" / f"r{r['round']}.json").exists():
+            replays += replay_round(root, r["round"], dest / "replays")
+    if replays:
+        lines += ["", "## Replays (instance A, re-simulated without actuation noise)", ""]
+        lines += [f"![{p.stem}](replays/{p.name})" for p in replays]
     lines += ["", "## World values (revealed after the run)", "",
               "```json", json.dumps({k: round(v, 5) for k, v in secrets.get("world", {}).items()},
                                     indent=1), "```", "",

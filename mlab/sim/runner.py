@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import mujoco
@@ -103,6 +104,7 @@ def simulate(
     sample_hz: float = 50.0,
     timestep: float | None = None,
     early_stop: bool = True,
+    on_sample: Callable[[mujoco.MjData], None] | None = None,
 ) -> RunResult:
     values = knob_values(task, knobs)
     if rng is not None and act_noise > 0:
@@ -115,13 +117,14 @@ def simulate(
     if timestep is not None:
         model.opt.timestep = timestep
     try:
-        return _run(dev, task, values, sample_hz, early_stop)
+        return _run(dev, task, values, sample_hz, early_stop, on_sample)
     finally:
         model.opt.timestep = base_dt
 
 
 def _run(
-    dev: CompiledDevice, task: TaskIR, values: dict[str, float], sample_hz: float, early_stop: bool
+    dev: CompiledDevice, task: TaskIR, values: dict[str, float], sample_hz: float, early_stop: bool,
+    on_sample: Callable[[mujoco.MjData], None] | None = None,
 ) -> RunResult:
     model = dev.model
     data = prepare(dev, task, values)
@@ -155,6 +158,8 @@ def _run(
     energy: list[tuple[float, float]] = []
 
     def sample() -> None:
+        if on_sample is not None:
+            on_sample(data)
         times.append(float(data.time))
         energy.append((float(data.energy[0]), float(data.energy[1])))
         for name, kind, idx in sensor_specs:
