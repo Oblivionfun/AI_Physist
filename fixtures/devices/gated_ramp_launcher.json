@@ -1,0 +1,420 @@
+{
+  "device": {
+    "name": "gated_ramp_launcher",
+    "parts": [
+      {
+        "name": "table",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.06,
+            0.2,
+            0.25
+          ]
+        },
+        "material": "concrete",
+        "pos": [
+          0.0,
+          0.0,
+          0.25
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": null,
+        "mount": {
+          "kind": "base",
+          "parent": null,
+          "anchor": null,
+          "axis": null,
+          "joint_model": null,
+          "spring": null,
+          "range": null,
+          "carried_by": null
+        }
+      },
+      {
+        "name": "track",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.06,
+            0.2,
+            0.01
+          ]
+        },
+        "material": "wood",
+        "pos": [
+          0.0,
+          0.0,
+          0.51
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": null,
+        "mount": {
+          "kind": "fixed",
+          "parent": "table",
+          "anchor": null,
+          "axis": null,
+          "joint_model": null,
+          "spring": null,
+          "range": null,
+          "carried_by": null
+        }
+      },
+      {
+        "name": "ramp",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.06,
+            0.13,
+            0.008
+          ]
+        },
+        "material": "wood",
+        "pos": [
+          0.0,
+          0.33,
+          0.512
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": null,
+        "mount": {
+          "kind": "hinge",
+          "parent": "track",
+          "anchor": [
+            0.0,
+            0.2,
+            0.52
+          ],
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_model": "bearing",
+          "spring": null,
+          "range": [
+            0.0,
+            0.55
+          ],
+          "carried_by": null
+        }
+      },
+      {
+        "name": "gate",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.05,
+            0.005,
+            0.007
+          ]
+        },
+        "material": "aluminium",
+        "pos": [
+          0.0,
+          0.455,
+          0.527
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": "gate_mass",
+        "mount": {
+          "kind": "hinge",
+          "parent": "ramp",
+          "anchor": [
+            0.0,
+            0.455,
+            0.52
+          ],
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_model": "bearing",
+          "spring": {
+            "model": "torsion_soft",
+            "rest": 0.0
+          },
+          "range": [
+            0.0,
+            2.0
+          ],
+          "carried_by": null
+        }
+      },
+      {
+        "name": "stand",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.04,
+            0.03,
+            0.29
+          ]
+        },
+        "material": "aluminium",
+        "pos": [
+          0.16,
+          0.105,
+          0.29
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": null,
+        "mount": {
+          "kind": "base",
+          "parent": null,
+          "anchor": null,
+          "axis": null,
+          "joint_model": null,
+          "spring": null,
+          "range": null,
+          "carried_by": null
+        }
+      },
+      {
+        "name": "plunger",
+        "shape": {
+          "kind": "box",
+          "size": [
+            0.075,
+            0.03,
+            0.008
+          ]
+        },
+        "material": "wood",
+        "pos": [
+          0.045,
+          0.105,
+          0.545
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": null,
+        "mount": {
+          "kind": "slide",
+          "parent": "stand",
+          "anchor": [
+            0.12,
+            0.105,
+            0.545
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "joint_model": "rail",
+          "spring": {
+            "model": "coil_stiff",
+            "rest": -0.1
+          },
+          "range": [
+            -0.34,
+            0.0
+          ],
+          "carried_by": null
+        }
+      },
+      {
+        "name": "ball",
+        "shape": {
+          "kind": "sphere",
+          "size": [
+            0.025
+          ]
+        },
+        "material": "steel",
+        "pos": [
+          0.0,
+          0.16,
+          0.545
+        ],
+        "euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hidden_mass": "ball_mass",
+        "mount": {
+          "kind": "free",
+          "parent": null,
+          "anchor": null,
+          "axis": null,
+          "joint_model": null,
+          "spring": null,
+          "range": null,
+          "carried_by": "plunger"
+        }
+      }
+    ],
+    "actuators": [
+      {
+        "name": "drive",
+        "part": "plunger",
+        "model": "linear_actuator"
+      }
+    ],
+    "latches": [
+      {
+        "name": "hold",
+        "part": "plunger"
+      },
+      {
+        "name": "tilt_lock",
+        "part": "ramp"
+      }
+    ],
+    "sensors": [
+      {
+        "name": "plunger_x",
+        "kind": "joint_angle",
+        "part": "plunger",
+        "noise": 0.002
+      },
+      {
+        "name": "plunger_v",
+        "kind": "joint_velocity",
+        "part": "plunger",
+        "noise": 0.01
+      },
+      {
+        "name": "gate_a",
+        "kind": "joint_angle",
+        "part": "gate",
+        "noise": 0.002
+      },
+      {
+        "name": "ball_v",
+        "kind": "velocity",
+        "part": "ball",
+        "noise": 0.01
+      }
+    ],
+    "hidden": [
+      {
+        "low": 0.3,
+        "high": 0.9,
+        "scale": "linear",
+        "unit": "kg",
+        "description": "sealed mass of the launched ball",
+        "name": "ball_mass"
+      },
+      {
+        "low": 0.02,
+        "high": 0.1,
+        "scale": "linear",
+        "unit": "kg",
+        "description": "sealed mass of the hinged gate plate at the ramp lip",
+        "name": "gate_mass"
+      }
+    ],
+    "zones": []
+  },
+  "task": {
+    "title": "Gated ramp launcher",
+    "goal_text": "A latched plunger is pressed back against a coil spring with a ball on its face. On release the spring and the actuator throw it forward; past the spring's rest point the plunger slows and the ball runs on alone. It climbs the locked ramp, then must shove a sprung gate plate off the ramp lip before it can fly. Climbing costs speed but buys launch angle and height; the gate takes a bite out of the shot and holds it outright if it arrives too slowly. Set pull-back, actuator command and tilt so the ball first touches the floor at the target distance along +y from the table centre.",
+    "knobs": [
+      {
+        "name": "pullback",
+        "low": -0.32,
+        "high": -0.12,
+        "unit": "m",
+        "description": "plunger position on its rail before release; more negative pulls the plunger (and the ball with it) further back and compresses the spring more"
+      },
+      {
+        "name": "drive",
+        "low": 0.0,
+        "high": 0.7,
+        "unit": "-",
+        "description": "command held on the linear actuator during the drive phase; it pushes the plunger forward alongside the spring"
+      },
+      {
+        "name": "tilt",
+        "low": 0.0,
+        "high": 0.5,
+        "unit": "rad",
+        "description": "angle at which the take-off ramp is locked before the run; 0 leaves it flush with the rail, larger values raise its far end so the ball must run uphill before it reaches the gate"
+      }
+    ],
+    "setup": [
+      {
+        "part": "plunger",
+        "value": "pullback"
+      },
+      {
+        "part": "ramp",
+        "value": "tilt"
+      }
+    ],
+    "phases": [
+      {
+        "duration": 0.5,
+        "ctrl": {
+          "drive": "drive"
+        },
+        "release": [
+          "hold"
+        ]
+      },
+      {
+        "duration": 2.5,
+        "ctrl": {},
+        "release": []
+      }
+    ],
+    "horizon": 3.0,
+    "outcome": {
+      "kind": "landing_point",
+      "part": "ball",
+      "axes": [
+        "y"
+      ]
+    },
+    "goal_space": [
+      {
+        "low": 0.71,
+        "high": 1.22
+      }
+    ],
+    "tolerance": 0.06,
+    "budget": 54,
+    "escalation": [
+      "fewer sensors: the ball's position trace is gone, so the flight and the gate crossing can no longer be watched directly, only the carriage, the gate kick and where the ball lands",
+      "smaller budget: 60 experiments down to 54, over the same three-knob action space with two stall boundaries inside it",
+      "the gate plate can now be grown half again as tall at modification time, so the barrier the referee tests with is well outside anything the learner can have measured on the built device, and it is the only announced modification: there is no flight-geometry change to fall back on, the learner has to have modelled the gate contact itself",
+      "the reachable band is trimmed at the top, so the window the shots have to be aimed into is a narrower slice of the device's authority"
+    ],
+    "modifiable": [
+      {
+        "part": "gate",
+        "field": "size2",
+        "low": 0.005,
+        "high": 0.016
+      }
+    ]
+  }
+}

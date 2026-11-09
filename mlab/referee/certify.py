@@ -7,9 +7,9 @@ C1  existence: the privileged oracle hits goals under actuation noise.
 C1b robustness: oracle solutions survive +-1 % knob perturbations (PHYRE "stable" solves).
 C2  necessity: prior-nominal parameters and the single best fixed action both fail.
 C3  identifiability: (a) posterior predictive uncertainty after a budget of probes is below
-    half the tolerance; (b) a gray-box reference learner succeeds within budget; (c) every
-    declared modifiable dimension moves outcomes enough to separate physical models from curve
-    fits that ignore it.
+    half the tolerance (the gate); (b) a gray-box reference learner's success within budget
+    (advisory since D-022: it warns but does not block); (c) every declared modifiable
+    dimension moves outcomes enough to separate physical models from curve fits that ignore it.
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ class CertProfile:
     fisher_probes: int = 16
     fisher_step: float = 0.05
     reference_instances: int = 2
-    reference_extra_fits: int = 2
+    reference_extra_fits: int = 0
     reference_max_keys: int = 4
     reference_fit: FitBudget = field(default_factory=FitBudget)
     coverage_goals: int = 256
@@ -84,7 +84,6 @@ FAST = CertProfile(
     refine_evals=20,
     fisher_probes=8,
     reference_instances=1,
-    reference_extra_fits=1,
     coverage_goals=256,
     physics_samples=2,
     prior_draws=16,
@@ -98,7 +97,6 @@ TEST = CertProfile(
     refine_evals=15,
     fisher_probes=6,
     reference_instances=1,
-    reference_extra_fits=0,
     reference_max_keys=2,
     reference_fit=FitBudget(search_points=8, search_subset=6, fit_subset=8, refine_starts=1,
                             refine_evals=12),
@@ -119,7 +117,8 @@ class Verdict:
 
     @property
     def passed(self) -> bool:
-        return self.decision == "pass"
+        """'warn' is advisory: it is reported to the builder but does not block (D-022)."""
+        return self.decision in ("pass", "warn")
 
     def line(self) -> str:
         val = "" if self.value is None else f" value={self.value:.3f}"
@@ -436,8 +435,11 @@ class Certifier:
             return self._add("C3", "modification test", "pass", None, thr,
                              "no modifiable dimensions declared: theories will not be tested on "
                              "modified devices")
-        effects = modification_effect(self.sub, self.devs[0], self.rng)
-        self.sims += 6 * (1 + len(effects))
+        # Measured on the oracle's solving actions: they produce valid outcomes in the goal
+        # region, which is what an exam asks about (random knobs can all miss it, D-022).
+        knob_list = [kn for _, kn in self.solutions[0]][: self.p.n_goals]
+        effects = modification_effect(self.sub, self.devs[0], self.rng, knob_list=knob_list)
+        self.sims += len(knob_list) * (1 + len(effects))
         self.cert.stats["modification_effect_over_tol"] = effects
         vis = visible_params(self.device, self.task)
         tested = {mod_key(m): modified_value(m, vis[mod_key(m)]) for m in self.task.modifiable}
@@ -473,8 +475,9 @@ class Certifier:
         return hits, len(goals), fit.unit_error
 
     def _c3_reference(self) -> Verdict:
-        """Planned fits first; while the pooled result is inconclusive (its Wilson interval
-        straddles the threshold), add independent fits up to the profile's cap (D-020)."""
+        """Advisory (D-022): the heuristic reference fit both rejects identifiable designs and
+        passes budget-starved ones, so it warns instead of blocking; the posterior predictive
+        check is the gate. Optional extra fits while the pooled result is inconclusive (D-020)."""
         thr = THRESHOLDS["C3_reference"]
         nominal = nominal_instance(self.device)
         planned = min(self.p.reference_instances, len(self.devs))
@@ -495,12 +498,17 @@ class Certifier:
         self.cert.stats["reference_success"] = k / n
         self.cert.stats["reference_fit_hits"] = per_fit
         self.cert.stats["reference_unit_error"] = errors
+        detail = (f"a learner that knows the structure but not the values, using only the "
+                  f"public interface and {self.task.budget} experiments, hit {k}/{n} goals "
+                  f"(independent fits: {', '.join(per_fit)}"
+                  + (f"; {extra} added because the result was inconclusive" if extra else "")
+                  + "; goals within one fit share its errors)")
+        if decision != "pass":
+            decision = "warn"
+            detail += ("; advisory only: this heuristic fit is a weak learner, so a low score does "
+                       "not block certification, but the task may be hard to learn within budget")
         return self._add("C3", "learnability (gray-box reference learner)", decision, k / n, thr,
-                         f"a learner that knows the structure but not the values, using only the "
-                         f"public interface and {self.task.budget} experiments, hit {k}/{n} goals "
-                         f"(independent fits: {', '.join(per_fit)}"
-                         + (f"; {extra} added because the result was inconclusive" if extra else "")
-                         + "; goals within one fit share its errors)")
+                         detail)
 
 
 def certify(submission: Submission, world: dict[str, float], rng: np.random.Generator,

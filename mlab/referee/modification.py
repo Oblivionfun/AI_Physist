@@ -13,6 +13,9 @@ from mlab.referee.oracle import usable
 from mlab.sim.runner import simulate
 
 DISCRIMINATION = 1.5
+# A modification that turns a valid outcome into none (or back) changes the answer entirely; it
+# is counted as this many tolerances rather than dropped as missing data (D-022).
+KIND_CHANGE = 10.0
 
 
 def modified_value(mod: ModifiableIR, now: float) -> float:
@@ -31,20 +34,29 @@ def outcomes(dev: CompiledDevice, task: TaskIR, knob_list: list[dict]) -> list[l
 
 def effect_over_tol(base: list[list[float] | None], moved: list[list[float] | None],
                     tolerance: float) -> float | None:
-    """Median outcome change over paired queries, in tolerances."""
-    diffs = [float(np.linalg.norm(np.asarray(a) - np.asarray(b))) / tolerance
-             for a, b in zip(base, moved, strict=True) if a is not None and b is not None]
+    """Median outcome change over paired queries, in tolerances (None if no pair has an outcome
+    on either side)."""
+    diffs = []
+    for a, b in zip(base, moved, strict=True):
+        if a is None and b is None:
+            continue
+        if a is None or b is None:
+            diffs.append(KIND_CHANGE)
+        else:
+            diffs.append(float(np.linalg.norm(np.asarray(a) - np.asarray(b))) / tolerance)
     return float(np.median(diffs)) if diffs else None
 
 
 def modification_effect(sub: Submission, dev: CompiledDevice, rng: np.random.Generator,
-                        n: int = 6) -> dict[str, float | None]:
-    """Effect of each declared modification at its test value, over random knob settings."""
+                        n: int = 6, knob_list: list[dict] | None = None) -> dict[str, float | None]:
+    """Effect of each declared modification at its test value, over `knob_list` (default: n
+    random knob settings)."""
     task = sub.task
     names = [k.name for k in task.knobs]
     vis = visible_params(sub.device, task)
-    knob_list = [dict(zip(names, [k.low + rng.uniform() * (k.high - k.low) for k in task.knobs],
-                          strict=True)) for _ in range(n)]
+    if knob_list is None:
+        knob_list = [dict(zip(names, [k.low + rng.uniform() * (k.high - k.low) for k in task.knobs],
+                              strict=True)) for _ in range(n)]
     base = outcomes(dev, task, knob_list)
     out: dict[str, float | None] = {}
     for mod in task.modifiable:

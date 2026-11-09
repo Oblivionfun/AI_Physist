@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 from fixtures.devices import pendulum_striker, spring_launcher
 from mlab.construct import Builder, Fixed, Hinge, Submission
@@ -97,6 +98,24 @@ def _turntable() -> Submission:
     return Submission(device=b.finish(), task=task)
 
 
+GATED_RAMP = Path(__file__).with_name("gated_ramp_launcher.json")
+
+
+def gated_ramp(**task_update) -> Submission:
+    """The certified round-4 device of run demo-2 (written by the LLM builder; its modifiable
+    dimension is dropped so that only the identifiability gate is exercised)."""
+    sub = Submission.model_validate_json(GATED_RAMP.read_text())
+    return Submission(device=sub.device,
+                      task=sub.task.model_copy(update={"modifiable": [], **task_update}))
+
+
+def _starved_interface() -> Submission:
+    """Three knobs and several confounded unknowns, but no sensors and 10 experiments: the
+    outcome alone cannot pin the unknowns down in budget, although knowing them solves it."""
+    sub = gated_ramp(budget=10)
+    return Submission(device=sub.device.model_copy(update={"sensors": []}), task=sub.task)
+
+
 def _inert_modification() -> Submission:
     """The flat plunger face pushes along x wherever the ball sits across it, so moving the
     ball sideways leaves the landing x unchanged: a theory that ignores it scores as well."""
@@ -125,4 +144,6 @@ CERTIFICATE_CHEATS = [
     ),
     CertificateCheat("inert modifiable dimension", ("C3",), _inert_modification,
                      expected_check="modification test"),
+    CertificateCheat("unidentifiable within budget", ("C3",), _starved_interface,
+                     expected_check="identifiability (posterior predictive)"),
 ]
