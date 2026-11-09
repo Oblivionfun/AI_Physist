@@ -1,0 +1,1 @@
+{"version":1,"run_id":"llm-learner-smoke","generated":1794213626.675099,"events":"events.json","replays":{},"curves":{},"builder":"reference","learner":"llm-learner:cursor-agent:gpt-5.3-codex","rerun_of":null,"rounds":[{"round":1,"status":"ok","device":"ball_launcher"}]}
