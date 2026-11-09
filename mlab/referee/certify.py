@@ -65,6 +65,7 @@ class CertProfile:
     fisher_probes: int = 16
     fisher_step: float = 0.05
     reference_instances: int = 2
+    reference_extra_fits: int = 2
     reference_max_keys: int = 4
     reference_fit: FitBudget = field(default_factory=FitBudget)
     coverage_goals: int = 256
@@ -83,6 +84,7 @@ FAST = CertProfile(
     refine_evals=20,
     fisher_probes=8,
     reference_instances=1,
+    reference_extra_fits=1,
     coverage_goals=256,
     physics_samples=2,
     prior_draws=16,
@@ -96,6 +98,7 @@ TEST = CertProfile(
     refine_evals=15,
     fisher_probes=6,
     reference_instances=1,
+    reference_extra_fits=0,
     reference_max_keys=2,
     reference_fit=FitBudget(search_points=8, search_subset=6, fit_subset=8, refine_starts=1,
                             refine_evals=12),
@@ -454,38 +457,50 @@ class Certifier:
                          f"every modifiable dimension moves outcomes by at least {worst:.2f} x "
                          "tolerance at its tested value")
 
+    def _reference_fit(self, dev: CompiledDevice, nominal: dict[str, float]) -> tuple[int, int, dict]:
+        """One independent gray-box learner: its own experiments, fit, and exam goals."""
+        base = dict(dev.theta)
+        for key in self.priors:
+            base[key] = nominal[key]
+        fit = gray_box_fit(dev, self.task, self.priors, self.relevant, base, self.rng,
+                           self.p.act_noise, self.task.budget, self.p.reference_fit)
+        self.sims += fit.sims
+        oracle = GenericOracle(compile_device(self.device, fit.theta_hat), self.task, self.rng,
+                               self.p.table_per_dim, self.p.refine_evals)
+        goals = _goals(self.task, self.p.n_goals, self.rng)
+        hits = sum(self._eval(dev, oracle.solve(goal), goal, 1) for goal in goals)
+        self.sims += oracle.sim_count
+        return hits, len(goals), fit.unit_error
+
     def _c3_reference(self) -> Verdict:
+        """Planned fits first; while the pooled result is inconclusive (its Wilson interval
+        straddles the threshold), add independent fits up to the profile's cap (D-020)."""
+        thr = THRESHOLDS["C3_reference"]
+        nominal = nominal_instance(self.device)
+        planned = min(self.p.reference_instances, len(self.devs))
         k = n = 0
         errors, per_fit = [], []
-        nominal = nominal_instance(self.device)
-        for i in range(min(self.p.reference_instances, len(self.devs))):
-            dev = self.devs[i]
-            base = dict(dev.theta)
-            for key in self.priors:
-                base[key] = nominal[key]
-            fit = gray_box_fit(dev, self.task, self.priors, self.relevant, base, self.rng,
-                               self.p.act_noise, self.task.budget, self.p.reference_fit)
-            self.sims += fit.sims
-            errors.append(fit.unit_error)
-            est_dev = compile_device(self.device, fit.theta_hat)
-            oracle = GenericOracle(est_dev, self.task, self.rng, self.p.table_per_dim,
-                                   self.p.refine_evals)
-            goals = _goals(self.task, self.p.n_goals, self.rng)
-            hits = sum(self._eval(dev, oracle.solve(goal), goal, 1) for goal in goals)
-            per_fit.append(f"{hits}/{len(goals)}")
-            k += hits
-            n += len(goals)
-            self.sims += oracle.sim_count
-        decision = point_decision(k, n, THRESHOLDS["C3_reference"], at_least=True)
+        decision = "gray"
+        while len(per_fit) < planned or (
+                decision == "gray" and len(per_fit) < planned + self.p.reference_extra_fits):
+            hits, m, err = self._reference_fit(self.devs[len(per_fit) % len(self.devs)], nominal)
+            per_fit.append(f"{hits}/{m}")
+            errors.append(err)
+            k, n = k + hits, n + m
+            if len(per_fit) >= planned:
+                decision = decide(k, n, thr, at_least=True)
+        extra = len(per_fit) - planned
+        if decision == "gray":
+            decision = point_decision(k, n, thr, at_least=True)
         self.cert.stats["reference_success"] = k / n
         self.cert.stats["reference_fit_hits"] = per_fit
         self.cert.stats["reference_unit_error"] = errors
-        return self._add("C3", "learnability (gray-box reference learner)", decision, k / n,
-                         THRESHOLDS["C3_reference"],
+        return self._add("C3", "learnability (gray-box reference learner)", decision, k / n, thr,
                          f"a learner that knows the structure but not the values, using only the "
                          f"public interface and {self.task.budget} experiments, hit {k}/{n} goals "
-                         f"(independent fits: {', '.join(per_fit)}; goals within one fit share its "
-                         "errors)")
+                         f"(independent fits: {', '.join(per_fit)}"
+                         + (f"; {extra} added because the result was inconclusive" if extra else "")
+                         + "; goals within one fit share its errors)")
 
 
 def certify(submission: Submission, world: dict[str, float], rng: np.random.Generator,
