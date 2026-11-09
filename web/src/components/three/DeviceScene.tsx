@@ -1,6 +1,6 @@
 import { ContactShadows, Edges, Grid, Html, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { outcomePoint, type DecodedReplay } from "../../data/replay";
 import type { Scene, ScenePart } from "../../data/types";
@@ -24,7 +24,6 @@ interface Props {
   loop?: boolean;
   marks?: Marks;
   camera?: CameraMode;
-  god?: boolean;
   partLabels?: Record<string, string>;
   highlight?: string[];
 }
@@ -314,10 +313,8 @@ function CameraRig({ scene, mode, refs }: {
 export function DeviceScene({ scene, replay, replayKey, rate = 1, loop = true, marks = {}, camera = "three", partLabels, highlight }: Props) {
   const refs = useRef<Record<string, THREE.Object3D | null>>({});
   const clockRef = useRef({ t: 0 });
-  const [, force] = useState(0);
   useEffect(() => {
     clockRef.current.t = 0;
-    force((x) => x + 1);
   }, [replayKey, replay]);
   const appearAt = replay ? Math.max(0.05, replay.tOutcome) : 0;
   const { center } = useMemo(() => bounds(scene), [scene]);

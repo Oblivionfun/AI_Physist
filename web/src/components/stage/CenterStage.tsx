@@ -73,7 +73,6 @@ export function CenterStage() {
             rate={rate}
             marks={marks}
             camera={camera}
-            god={god}
             partLabels={hiddenLabels}
           />
         </div>

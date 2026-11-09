@@ -128,7 +128,7 @@ export function Ribbon() {
         )}
         <rect x={x(disp)} width={Math.max(0, width - 8 - x(disp))} y={0} height={height} className="future" />
         <line x1={x(disp)} x2={x(disp)} y1={0} y2={height} className="playhead" />
-        <ReverseLabel tl={tl} disp={disp} x={x(disp)} width={width} start={s.startTs} />
+        <PlayheadLabel tl={tl} disp={disp} x={x(disp)} width={width} start={s.startTs} />
       </svg>
     </section>
   );
@@ -167,7 +167,8 @@ function BuilderLane({ s, tl, x }: { s: RunState; tl: Timeline; x: (v: number) =
   );
 }
 
-function ReverseLabel({ tl, disp, x, width, start }: { tl: Timeline; disp: number; x: number; width: number; start: number }) {
+/** Real run time at the playhead (the axis itself is squeezed display time). */
+function PlayheadLabel({ tl, disp, x, width, start }: { tl: Timeline; disp: number; x: number; width: number; start: number }) {
   const real = toReal(tl, disp) - start;
   const h = Math.floor(real / 3600);
   const m = Math.floor((real % 3600) / 60);

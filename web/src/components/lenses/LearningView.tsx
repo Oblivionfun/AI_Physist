@@ -224,7 +224,6 @@ export function LearningView() {
                 replay={replay}
                 replayKey={`${round}${label}${sel}`}
                 marks={{ prediction: selExp?.prediction, observed: selExp?.outcome, truth: god ? (replay?.outcome ?? null) : null }}
-                god={god}
               />
               <span className="label mini-cap">裁判视角 · 学习者看不到</span>
             </div>
