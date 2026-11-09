@@ -200,3 +200,17 @@
 - 实施：参考学习者低于 0.7 时判为 `warn`，不阻止认证；新增作弊装置和阳性对照；改装检验改在解题动作上测量，结果类型变化计为 10 倍容差（修复同一实验中暴露的误拒）。
 - 红线测试误报一次：夹具里的路径字符串 `"data"` 被当成装置专用词。处理方式是把 JSON 移到夹具目录根下，不放宽红线测试。
 - 验证：`pytest -q` 60 passed；`pytest -m slow` 4 passed（613 s）。
+
+## 2026-11-09 15:15 demo-3 启动
+- 命令：`uv run mlab run --run-id demo-3 --rounds 5 --seed 3 --profile full --builder cursor --builder-model claude-opus-5-thinking-high --learner cursor --learner-model gpt-5.6-sol-high --max-attempts 3 --timeout 2400`。
+- 与 demo-2 的区别：C3 以 Fisher 检验为门槛、参考学习者只警告（D-022）；预测可以为 null（D-021）；基础设施容错补漏、`caffeinate` 防空闲睡眠（D-019 补充）；新世界（种子 3）。
+- 目的：看建造者在没有参考学习者硬门槛之后，能否把难度推到学习者的目标区间（30% 到 80%）以内。
+- 电脑接通电源。运行期间不改动 `mlab/` 下的代码。
+
+## 2026-11-09 观察窗：可视化与直播网页（D-023）
+- 新增 `observatory/`（运行目录到事件流、裁判侧重演与曲线、静态导出、令牌保护的直播服务）和 `web/`（舞台、学习过程、跨轮积累、结论、导览）。demo-3 运行期间开发，`mlab/` 下没有任何改动，也没有执行 `uv sync`。
+- 导出：`uv run python -m observatory export demo-1 demo-1-weak demo-1-amnesic llm-learner-smoke demo-2`，静态包写入 `demo/recorded/<run_id>/viz/`（demo-2 约 6.6 MB，导出约 110 s，大部分时间花在曲线的重新仿真上）。
+- 直播：`uv run python -m observatory serve`，对 demo-3 只读联调。无令牌请求 401，错误 Host 421，`~/mlab-runs/_viz/` 为 0700、令牌文件为 0600；SSE 实时推送；按需重演约 30 ms；曲线先返回 202，约 25 s 后返回 200。
+- 走过的弯路：3D 空白（截图抓得太早；OrbitControls 目标点没生效；重演跑满 3 秒，球滚出画面）；响应切片默认旋钮取了两个实例合并的结果；导览引用了建造者的开场白而不是诊断。都已修正，见 process.md 阶段 15。
+- 验证：`pytest -q` 66 passed（新增 `tests/test_observatory.py` 6 项）；`ruff check observatory tests/test_observatory.py` 通过；`pnpm build`（含 `tsc --noEmit`）通过。
+- 遗留：demo-3 结束后导出它的静态包；把 `observatory` 写进 `pyproject.toml` 的脚本入口（需要 `uv sync`，运行期间不做）。

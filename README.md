@@ -64,6 +64,20 @@ uv run python -m mlab.analysis.demo_report demo     # 写入 demo/recorded/demo/
 
 每份演示包含时间线、图表、MuJoCo 回放动画，以及建造者的设计日志和学习者的笔记、理论代码。结论汇总见 [`DESIGN.md`](DESIGN.md) 第 3 节。
 
+## 观察窗：可视化与直播网页
+
+浏览器里看一次运行：3D 舞台上逐次重演学习者的实验（橙色环是它的预测，半径等于容差），配合证书闸门、信道哈希链、学习过程、跨轮积累、结论页和导览。设计与隔离考虑见 D-023。
+
+```bash
+cd web && pnpm install && pnpm build && cd ..        # 构建前端（Node 24，pnpm）
+uv run python -m observatory export demo-2           # 为已结束的运行导出静态包到 demo/recorded/demo-2/viz/
+uv run python -m observatory serve                   # 本地服务：直播进行中的运行，也能看已录制的
+```
+
+- `serve` 会打印一个带令牌的地址 `http://127.0.0.1:<port>/#token=...`，只用浏览器打开它。Agent 的沙箱可以联网，令牌是这个服务唯一的访问控制，不要粘进任何 Agent 会话。
+- 直播默认跟随最新事件，可以拖时间轴回看；“上帝视角”显示隐藏真值，直播时默认关闭。
+- 不需要服务的静态版：`cd web && pnpm build && pnpm bundle`，把 `web/dist/` 放到任意静态服务器上（例如 `npx vite preview`），只含已导出的运行。
+
 运行目录：`~/mlab-runs/<run_id>/`（可用 `MLAB_RUNS_DIR` 覆盖）。
 
 | 目录 | 内容 | 谁能访问 |
@@ -84,6 +98,8 @@ mlab/agents      cursor-agent 后端、LLM 建造者/学习者、冻结 prompt�
 mlab/sandbox     Seatbelt 策略、自检、canary 审计
 mlab/cli         mlab（编排）、forge（建造者工具）、lab（学习者客户端，只用标准库）
 mlab/analysis    演示报告、MuJoCo 回放、会话记录摘要
+observatory/     观察窗后端：运行目录到事件流、裁判侧重演与曲线、静态导出、令牌保护的直播服务
+web/             观察窗前端（Vite + React + three.js）
 fixtures/        带标签的合格/作弊装置（裁判元评测）
 scripts/diagnostics  运维诊断：C3 参考学习者方差、从会话记录还原编辑、在已录制世界中重新认证
 tests/           pytest

@@ -22,11 +22,14 @@ mlab/agents      Agent 后端（cursor-agent / codex）、冻结的 prompt、
 mlab/sandbox     沙箱策略、自检、canary 审计
 mlab/cli         forge（建造者工具）、lab（学习者客户端，只用标准库）、mlab（编排入口）
 mlab/analysis    作图、回放、demo 报告
+observatory/     观察窗后端（只读事件流、裁判侧重演、静态导出、直播服务）
+web/             观察窗前端（TypeScript）
 fixtures/        带标签的合格装置与作弊装置，仅用于测试和裁判元评测
 tests/           pytest
 ```
 
-- 依赖方向：`catalog -> construct -> sim -> referee -> agents/cli/analysis`，禁止反向 import。
+- 依赖方向：`catalog -> construct -> sim -> referee -> agents/cli/analysis`，禁止反向 import。`observatory` 只 import `mlab`，`mlab` 不得 import `observatory`。
+- `observatory/` 和 `web/` 必须留在 `mlab/` 之外：建造者的沙箱能读 `mlab/`，观察窗的接口和令牌位置不能进入 Agent 可读的范围（D-023）。观察窗只读运行目录，不得写任何 Agent 可见的位置。
 - `mlab/cli/lab.py` 会被复制到学习者工作区，因此只能使用标准库，不得 import `mlab`。
 - 本目录自成一体，不 import 工作区里 `codex/`、`gemini/` 或根目录 `src/` 下的任何代码。
 - `fixtures/` 与 `tests/` 在运行时必须对两个 Agent 都不可见，由沙箱策略保证。
