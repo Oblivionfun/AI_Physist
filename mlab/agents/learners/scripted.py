@@ -179,6 +179,8 @@ class SurrogateLearner:
             else:
                 if step < len(design):
                     u = design[step]
+                elif gps_now is None:
+                    u = self.rng.uniform(size=d)  # too few valid outcomes to model: keep exploring
                 else:
                     cand = self.rng.uniform(size=(1024, d))
                     mus = np.stack([g.predict(cand)[0] for g in gps_now], axis=1)

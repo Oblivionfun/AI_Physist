@@ -1,18 +1,20 @@
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
 from fixtures.devices import pendulum_striker
-from fixtures.devices.cheats import _inert_modification
+from fixtures.devices.cheats import _inert_modification, gated_ramp
+from mlab import orchestrator
 from mlab.agents.builders.reference import ReferenceBuilder
 from mlab.catalog import sample_world
 from mlab.construct import compile_device
 from mlab.orchestrator import Orchestrator, RecordedBuilder, RunConfig, offline_learner
 from mlab.referee.channel import verify
 from mlab.referee.metrics import InstanceMetrics, failure_tags
-from mlab.referee.report import guidance
+from mlab.referee.report import guidance, knob_spread
 from mlab.referee.theory_eval import QuerySet, build_query_sets, run_theory, score
 from mlab.referee.theta import twin_instances
 
@@ -95,6 +97,33 @@ def test_builder_session_lost_to_infrastructure_marks_the_round_invalid(tmp_path
     summary = Orchestrator(cfg, _LostBuilder(), offline_learner(3), log=lambda *_: None).run()
     assert summary["rounds"][0]["status"] == "invalid_infrastructure"
     assert "slept" in summary["rounds"][0]["invalid"]
+
+
+def test_knobs_never_varied_in_the_exam_are_reported_as_unneeded():
+    task = gated_ramp().task
+    names = [k.name for k in task.knobs]
+    attempts = [SimpleNamespace(phase="exam", knobs={n: (v if n == names[0] else task.knobs[i].low)
+                                                     for i, n in enumerate(names)})
+                for v in np.linspace(task.knobs[0].low, task.knobs[0].high, 4)]
+    spread = knob_spread(task, attempts)
+    assert spread[names[0]] == 1.0 and all(spread[n] == 0.0 for n in names[1:])
+    advice = guidance(1.0, 0.0, 1.0, spread=spread)
+    assert "not needed" in advice and names[1] in advice
+
+
+class _BrokenControl(orchestrator.SurrogateLearner):
+    def run(self, lab, memory=None):
+        raise TypeError("'NoneType' object is not iterable")
+
+
+def test_a_failing_control_is_recorded_and_the_run_goes_on(tmp_path, monkeypatch):
+    learner = offline_learner(3)
+    monkeypatch.setattr(orchestrator, "SurrogateLearner", _BrokenControl)
+    cfg = RunConfig(run_id="t", rounds=1, seed=3, profile="test", runs_dir=tmp_path)
+    summary = Orchestrator(cfg, ReferenceBuilder(), learner, log=lambda *_: None).run()
+    r = summary["rounds"][0]
+    assert r["status"] == "ok" and "NoneType" in r["controls"]["blackbox_error"]
+    assert summary["complete"] and r["swap"]["twin_difference_over_tol"] is not None
 
 
 def test_rerun_reuses_world_devices_and_instances(tmp_path):

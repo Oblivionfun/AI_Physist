@@ -24,8 +24,8 @@ from mlab.referee.channel import ChannelLog
 from mlab.referee.leak import scan
 from mlab.referee.manual import build_card
 from mlab.referee.metrics import compute_metrics
-from mlab.referee.modification import modification_effect
-from mlab.referee.report import build_report
+from mlab.referee.modification import DISCRIMINATION, modification_effect, twin_difference
+from mlab.referee.report import build_report, knob_spread
 from mlab.referee.session import LearnerSession
 from mlab.referee.theory_eval import build_query_sets, run_theory, score
 from mlab.referee.theta import hidden_priors, twin_instances
@@ -235,33 +235,6 @@ class Orchestrator:
             sess_a, qs_a, m_a, sec_a = self._session("A", sub, devs[0], thetas[0], card, self.learner)
             sess_b, qs_b, m_b, sec_b = self._session("B", sub, devs[1], thetas[1], card, twin)
             twin_sessions.extend(getattr(twin, "history", []))
-            tol = sub.task.tolerance
-            code_a, code_b = sess_a.record.theory_code, sess_b.record.theory_code
-            hr = self.theory.hit_rate
-            swap: dict = {
-                "A_on_A": hr(code_a, qs_a[0], tol), "B_on_B": hr(code_b, qs_b[0], tol),
-                "A_on_B": hr(code_a, qs_b[0], tol), "B_on_A": hr(code_b, qs_a[0], tol),
-            }
-            if not sub.device.hidden:
-                swap["note"] = ("not informative: the device has no device-specific hidden "
-                                "quantity, so both instances share identical physics")
-            old = None
-            if prev_theory is not None and prev_sub is not None and _signature(prev_sub) == _signature(sub):
-                old = hr(prev_theory, qs_a[0], tol)
-            controls: dict = {"modification_effect_over_tol": modification_effect(sub, devs[0], self.rng_ctrl)}
-            if self.cfg.blackbox_control:
-                ctrl = LearnerSession(sub, devs[0], card, self.rng_ctrl, self.cfg.act_noise)
-                SurrogateLearner(self.rng_ctrl, use_memory=False).run(LocalLab(ctrl))
-                controls["blackbox_exam_success"] = sum(
-                    a.success for a in ctrl.record.attempts if a.phase == "exam") / len(ctrl.exam_goals)
-            report = build_report(r, version, cert, [m_a, m_b], swap, old, controls)
-            if not sub.device.hidden:
-                report.guidance += (" The device declares no device-specific hidden quantity, so "
-                                    "every instance is identical; add one (e.g. a sealed mass) so "
-                                    "that each instance must be identified anew.")
-            report_dict = report.model_dump()
-            self.channel.append(4, "round_report", report_dict)
-            _write(self.dirs.public / "reports" / f"r{r}.json", report_dict)
             for label, sess in (("A", sess_a), ("B", sess_b)):
                 _write(self.dirs.referee / "sessions" / f"r{r}_{label}.json", {
                     "attempts": [a.__dict__ for a in sess.record.attempts],
@@ -270,6 +243,43 @@ class Orchestrator:
                     "belief": sess.record.belief.model_dump() if sess.record.belief else None,
                     "calls": sess.record.calls,
                 })
+            tol = sub.task.tolerance
+            code_a, code_b = sess_a.record.theory_code, sess_b.record.theory_code
+            hr = self.theory.hit_rate
+            swap: dict = {
+                "A_on_A": hr(code_a, qs_a[0], tol), "B_on_B": hr(code_b, qs_b[0], tol),
+                "A_on_B": hr(code_a, qs_b[0], tol), "B_on_A": hr(code_b, qs_a[0], tol),
+            }
+            twin_gap = twin_difference(sub.task, devs[1], [q["knobs"] for q in qs_a[0].queries],
+                                       qs_a[0].truths)
+            swap["twin_difference_over_tol"] = twin_gap
+            if not sub.device.hidden:
+                swap["note"] = ("not informative: the device has no device-specific hidden "
+                                "quantity, so both instances share identical physics")
+            elif twin_gap is not None and twin_gap < DISCRIMINATION:
+                swap["note"] = (f"non-discriminating: on these queries the twins' outcomes differ by "
+                                f"only {twin_gap:.2f} x tolerance, so one twin's theory can fit "
+                                "the other without any instance-specific learning")
+            old = None
+            if prev_theory is not None and prev_sub is not None and _signature(prev_sub) == _signature(sub):
+                old = hr(prev_theory, qs_a[0], tol)
+            controls = self._controls(sub, devs[0], card)
+            answered = [a for s, m in ((sess_a, m_a), (sess_b, m_b)) if not m.invalid
+                        for a in s.record.attempts]
+            spread = knob_spread(sub.task, answered)
+            report = build_report(r, version, cert, [m_a, m_b], swap, old, controls, spread)
+            if not sub.device.hidden:
+                report.guidance += (" The device declares no device-specific hidden quantity, so "
+                                    "every instance is identical; add one (e.g. a sealed mass) so "
+                                    "that each instance must be identified anew.")
+            elif "note" in swap:
+                report.guidance += (" The twin instances behaved almost identically on the exam "
+                                    "region, so the device-specific hidden quantities barely matter "
+                                    "there; give them a larger effect so that each instance must "
+                                    "be identified anew.")
+            report_dict = report.model_dump()
+            self.channel.append(4, "round_report", report_dict)
+            _write(self.dirs.public / "reports" / f"r{r}.json", report_dict)
             rounds.append({
                 "round": r, "status": "ok", "version": version, "device": sub.device.name,
                 "attempts": attempts, "metrics": [m_a.to_dict(), m_b.to_dict()],
@@ -281,9 +291,33 @@ class Orchestrator:
                      f"{m_b.pretest_rate:.0%}, exam {m_a.exam_rate:.0%}/{m_b.exam_rate:.0%}, swap {swap}, "
                      f"controls {controls}" + (f", INVALID sessions {lost}" if lost else ""))
             prev_sub, prev_theory = sub, code_a
+            self._write_summary(rounds, twin_sessions, complete=False)
+        return self._write_summary(rounds, twin_sessions, complete=True)
+
+    def _controls(self, sub: Submission, dev, card) -> dict:
+        """Referee-side controls. A failing control is recorded, never allowed to end the run."""
+        controls: dict = {}
+        try:
+            controls["modification_effect_over_tol"] = modification_effect(sub, dev, self.rng_ctrl)
+        except Exception as exc:  # noqa: BLE001
+            controls["modification_effect_error"] = repr(exc)[:300]
+        if self.cfg.blackbox_control:
+            try:
+                ctrl = LearnerSession(sub, dev, card, self.rng_ctrl, self.cfg.act_noise)
+                SurrogateLearner(self.rng_ctrl, use_memory=False).run(LocalLab(ctrl))
+                controls["blackbox_exam_success"] = sum(
+                    a.success for a in ctrl.record.attempts if a.phase == "exam") / len(ctrl.exam_goals)
+            except Exception as exc:  # noqa: BLE001
+                controls["blackbox_error"] = repr(exc)[:300]
+        return controls
+
+    def _write_summary(self, rounds: list[dict], twin_sessions: list[dict], complete: bool) -> dict:
+        """Written after every round so that a crash keeps the rounds already played."""
         summary = {"run_id": self.cfg.run_id, "builder": self.builder.name,
                    "learner": self.learner.name, "profile": self.cfg.profile, "rounds": rounds,
-                   "isolation_audit": self.audit()}
+                   "complete": complete}
+        if complete:
+            summary["isolation_audit"] = self.audit()
         for agent, key in ((self.builder, "builder_sessions"), (self.learner, "learner_sessions")):
             if hasattr(agent, "history"):
                 summary[key] = agent.history

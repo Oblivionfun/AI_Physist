@@ -5,11 +5,24 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from mlab.construct.ir import TaskIR
 from mlab.referee.certify import Certificate
 from mlab.referee.metrics import InstanceMetrics, failure_tags
 from mlab.referee.modification import DISCRIMINATION
 
 TARGET_BAND = (0.3, 0.8)
+UNUSED_SPREAD = 0.05
+
+
+def knob_spread(task: TaskIR, attempts: list) -> dict[str, float | None]:
+    """Spread of each knob over exam answers, as a fraction of its range. A knob the learners
+    never varied was not needed to reach the goals (D-024)."""
+    exam = [a for a in attempts if a.phase == "exam"]
+    out: dict[str, float | None] = {}
+    for k in task.knobs:
+        vals = [a.knobs[k.name] for a in exam if k.name in a.knobs]
+        out[k.name] = (max(vals) - min(vals)) / (k.high - k.low) if vals else None
+    return out
 
 
 class InstanceSummary(BaseModel):
@@ -36,7 +49,8 @@ class RoundReport(BaseModel):
     learnability: float
     swap_test: dict[str, float | None | str]
     old_theory_on_new_device: float | None
-    controls: dict[str, float | None | dict] = {}
+    controls: dict[str, float | None | dict | str] = {}
+    exam_knob_spread: dict[str, float | None] = {}
     tickets: list[dict]
     guidance: str
 
@@ -62,6 +76,9 @@ class RoundReport(BaseModel):
                          f"{self.old_theory_on_new_device:.0%}")
         if self.controls:
             lines.append(f"Controls: {self.controls}")
+        if self.exam_knob_spread:
+            spread = {k: None if v is None else round(v, 3) for k, v in self.exam_knob_spread.items()}
+            lines.append(f"Spread of each knob over all exam answers (fraction of its range): {spread}")
         for t in self.tickets:
             lines.append(f"Ticket [{t['category']}]: {t['text']}")
         lines.append(self.guidance)
@@ -70,7 +87,8 @@ class RoundReport(BaseModel):
 
 def guidance(exam_rate: float, pretest_rate: float, reference: float | None,
              blackbox: float | None = None,
-             mod_effects: dict[str, float | None] | None = None) -> str:
+             mod_effects: dict[str, float | None] | None = None,
+             spread: dict[str, float | None] | None = None) -> str:
     lo, hi = TARGET_BAND
     if exam_rate > hi:
         msg = (f"Learner exam success {exam_rate:.0%} is above the target band {lo:.0%}-{hi:.0%}: "
@@ -87,6 +105,12 @@ def guidance(exam_rate: float, pretest_rate: float, reference: float | None,
         msg += (f" A model-free curve-fitting baseline also reached {blackbox:.0%}: the challenge "
                 "can be brute-forced; prefer changes that need physical understanding (more "
                 "knobs, smaller budget, consequential modifiable dimensions).")
+    unused = [k for k, v in (spread or {}).items() if v is not None and v < UNUSED_SPREAD]
+    if unused and len(unused) < len(spread or {}):
+        msg += (f" In the exam the learners kept {unused} essentially fixed (spread under "
+                f"{UNUSED_SPREAD:.0%} of the range): those knobs were not needed to reach the goals, "
+                "so they add no difficulty while a simpler part of the action space still reaches "
+                "every goal.")
     inert = {k: v for k, v in (mod_effects or {}).items() if v is not None and v < DISCRIMINATION}
     for key, effect in inert.items():
         msg += (f" Modifiable '{key}' moved outcomes by only {effect:.2f} x tolerance at the "
@@ -97,7 +121,8 @@ def guidance(exam_rate: float, pretest_rate: float, reference: float | None,
 
 def build_report(round_index: int, version: int, cert: Certificate,
                  metrics: list[InstanceMetrics], swap: dict[str, float | None | str],
-                 old_theory: float | None, controls: dict | None = None) -> RoundReport:
+                 old_theory: float | None, controls: dict | None = None,
+                 spread: dict[str, float | None] | None = None) -> RoundReport:
     valid = [m for m in metrics if not m.invalid]
     exam = sum(m.exam_hits for m in valid) / max(1, sum(m.exam_n for m in valid))
     pre = sum(m.pretest_hits for m in valid) / max(1, sum(m.pretest_n for m in valid))
@@ -105,7 +130,7 @@ def build_report(round_index: int, version: int, cert: Certificate,
     if valid:
         advice = guidance(exam, pre, cert.stats.get("reference_success"),
                           (controls or {}).get("blackbox_exam_success"),
-                          (controls or {}).get("modification_effect_over_tol"))
+                          (controls or {}).get("modification_effect_over_tol"), spread)
     else:
         advice = ("Every learner session of this round failed for infrastructure reasons (network "
                   "or model service), which says nothing about the device or the learner: this "
@@ -137,6 +162,7 @@ def build_report(round_index: int, version: int, cert: Certificate,
         swap_test=swap,
         old_theory_on_new_device=old_theory,
         controls=controls or {},
+        exam_knob_spread=spread or {},
         tickets=tickets,
         guidance=advice,
     )

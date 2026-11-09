@@ -47,6 +47,14 @@ def effect_over_tol(base: list[list[float] | None], moved: list[list[float] | No
     return float(np.median(diffs)) if diffs else None
 
 
+def twin_difference(task: TaskIR, twin: CompiledDevice, knob_list: list[dict],
+                    truths: list[list[float] | None]) -> float | None:
+    """How far the twin's outcomes are from this instance's `truths` at the same knobs, in
+    tolerances. Below DISCRIMINATION the swap test cannot show instance-specific learning
+    (D-023)."""
+    return effect_over_tol(truths, outcomes(twin, task, knob_list), task.tolerance)
+
+
 def modification_effect(sub: Submission, dev: CompiledDevice, rng: np.random.Generator,
                         n: int = 6, knob_list: list[dict] | None = None) -> dict[str, float | None]:
     """Effect of each declared modification at its test value, over `knob_list` (default: n
