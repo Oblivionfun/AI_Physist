@@ -46,7 +46,7 @@ class LabRecord:
     index: int
     probe: bool
     knobs: dict[str, float]
-    prediction: list[float]
+    prediction: list[float] | None
     true_outcome: list[float] | None
     observed_outcome: list[float] | None
     status: str
@@ -149,27 +149,40 @@ class LearnerSession:
         return {"recorded": True, "next_phase": self.phase,
                 "note": "results are revealed when the session ends"}
 
-    def _run_experiment(self, values: dict[str, float], prediction: list[float], probe: bool) -> dict:
+    def _check_prediction(self, prediction: list[float] | None) -> list[float] | None:
+        """None predicts no valid outcome (a run whose status is not 'ok')."""
+        if prediction is None:
+            return None
         dim = len(self.task.goal_space)
-        if len(prediction) != dim or not all(np.isfinite(prediction)):
-            raise ProtocolError(f"prediction must be {dim} finite number(s)")
+        try:
+            values = [float(p) for p in prediction]
+        except (TypeError, ValueError):
+            values = []
+        if len(values) != dim or not all(np.isfinite(values)):
+            raise ProtocolError(f"prediction must be a list of {dim} finite number(s), or null "
+                                "if you expect no valid outcome")
+        return values
+
+    def _run_experiment(self, values: dict[str, float], prediction: list[float] | None,
+                        probe: bool) -> dict:
+        prediction = self._check_prediction(prediction)
         r = simulate(self.obs_dev, self.task, values, rng=self.rng, act_noise=self.act_noise)
         obs = observe(r, self.obs_dev.ir, self.task, self.rng)
         step = max(1, round(50.0 / TRACE_HZ))
         index = len(self.record.lab)
         self.record.lab.append(LabRecord(
-            index=index, probe=probe, knobs=values, prediction=[float(p) for p in prediction],
+            index=index, probe=probe, knobs=values, prediction=prediction,
             true_outcome=None if r.outcome is None else r.outcome.tolist(),
             observed_outcome=obs.outcome, status=r.status,
         ))
         self._log("experiment", index=index, probe=probe, knobs=values, prediction=prediction)
         return ExperimentObs(
-            index=index, probe=probe, knobs=values, prediction=[float(p) for p in prediction],
+            index=index, probe=probe, knobs=values, prediction=prediction,
             outcome=obs.outcome, status=obs.status, times=obs.times[::step],
             traces={k: v[::step] for k, v in obs.traces.items()},
         ).model_dump()
 
-    def experiment(self, knobs: dict[str, float], prediction: list[float]) -> dict:
+    def experiment(self, knobs: dict[str, float], prediction: list[float] | None) -> dict:
         self._require("lab")
         if len(self.record.lab) >= self.task.budget:
             raise ProtocolError("experiment budget exhausted; call finish_lab()")
@@ -190,10 +203,11 @@ class LearnerSession:
             self.pending_probe = self.probe_knobs[(len(self.record.lab) // PROBE_EVERY) % len(self.probe_knobs)]
         return {"knobs": self.pending_probe}
 
-    def probe_result(self, prediction: list[float]) -> dict:
+    def probe_result(self, prediction: list[float] | None) -> dict:
         self._require("lab")
         if self.pending_probe is None:
             raise ProtocolError("call probe() first")
+        self._check_prediction(prediction)
         knobs, self.pending_probe = self.pending_probe, None
         return self._run_experiment(knobs, prediction, probe=True)
 

@@ -85,10 +85,12 @@ def main(argv=None):
     a.add_argument("knobs", help='JSON object, e.g. \'{"name": 0.5}\'')
     e = sub.add_parser("exp", help="run one experiment (prediction required first)")
     e.add_argument("knobs", help="JSON object of knob values")
-    e.add_argument("prediction", help="JSON list: your predicted outcome")
+    e.add_argument("prediction", help="JSON list: your predicted outcome, or null if you "
+                                      "expect no valid outcome")
     sub.add_parser("probe", help="get the knob values of a due referee probe")
     pr = sub.add_parser("probe-result", help="predict the due probe, then see its result")
-    pr.add_argument("prediction", help="JSON list: your predicted outcome")
+    pr.add_argument("prediction", help="JSON list: your predicted outcome, or null if you "
+                                       "expect no valid outcome")
     sub.add_parser("finish-lab", help="end the lab phase")
     t = sub.add_parser("submit-theory", help="submit predict.py (+ optional belief JSON)")
     t.add_argument("path", help="path to predict.py")

@@ -93,7 +93,7 @@ class ExperimentObs(BaseModel):
     index: int
     probe: bool
     knobs: dict[str, float]
-    prediction: list[float]
+    prediction: list[float] | None
     outcome: list[float] | None
     status: str
     times: list[float]

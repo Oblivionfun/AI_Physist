@@ -30,10 +30,12 @@ Protocol (enforced by the lab tool):
 1. Pretest: you get {pretest} goals one at a time and must choose knob values for each
    before running any experiment on this device. Results are revealed only at the end.
 2. Lab: up to {budget} experiments. Every experiment requires your prediction of the
-   outcome before you see the result. Every {probe}th experiment is chosen by the referee:
-   you are told the knob values, you predict, then you see the result.
-3. Theory: submit predict.py defining predict(knobs: dict, visible: dict) -> list[float],
-   your model of the outcome. `visible` holds the modifiable dimensions listed below; the
+   outcome before you see the result; predict null if you expect no valid outcome (status
+   other than "ok", e.g. the part never lands). Every {probe}th experiment is chosen by the
+   referee: you are told the knob values, you predict, then you see the result.
+3. Theory: submit predict.py defining predict(knobs: dict, visible: dict) -> list[float]
+   (or None for no valid outcome), your model of the outcome. `visible` holds the
+   modifiable dimensions listed below; the
    referee may evaluate your model with different values for them, without letting you
    experiment. Also submit your estimates of the unknown quantities with 90% intervals.
 4. Exam: {exam} goals one at a time, one attempt each, no experiments. Results are

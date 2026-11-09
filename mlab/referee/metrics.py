@@ -29,6 +29,7 @@ class InstanceMetrics:
     belief: dict[str, dict] = field(default_factory=dict)
     tickets: list[dict] = field(default_factory=list)
     invalid: str | None = None
+    outcome_kind_misses: int = 0
 
     @property
     def exam_rate(self) -> float:
@@ -52,9 +53,11 @@ class InstanceMetrics:
         return d
 
 
-def _pred_err(pred: list[float], truth: list[float] | None, tol: float) -> float | None:
-    if truth is None:
-        return None
+def _pred_err(pred: list[float] | None, truth: list[float] | None, tol: float) -> float | None:
+    """None predicts no valid outcome: correct (0) when the run had none; a mismatch in kind
+    has no distance and is counted separately (outcome_kind_misses)."""
+    if pred is None or truth is None:
+        return 0.0 if pred is None and truth is None else None
     return float(np.linalg.norm(np.asarray(pred) - np.asarray(truth))) / tol
 
 
@@ -100,6 +103,7 @@ def compute_metrics(label: str, session: LearnerSession, theory: list[TheoryScor
                 for s in theory},
         belief=belief,
         tickets=[t.model_dump() for t in rec.tickets],
+        outcome_kind_misses=sum((r.prediction is None) != (r.true_outcome is None) for r in rec.lab),
     )
 
 

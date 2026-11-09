@@ -54,6 +54,27 @@ def test_probe_every_tenth_experiment(session):
     assert obs["probe"] and obs["knobs"] == knobs
 
 
+def test_a_rejected_probe_prediction_keeps_the_probe_pending(session):
+    _finish_pretest(session)
+    for _ in range(9):
+        session.experiment({"compression": -0.08}, [0.6])
+    knobs = session.probe()["knobs"]
+    with pytest.raises(ProtocolError):
+        session.probe_result([0.6, 0.1])
+    assert session.pending_probe == knobs
+    assert session.probe_result([0.6])["knobs"] == knobs
+
+
+def test_null_predicts_no_valid_outcome(session):
+    _finish_pretest(session)
+    obs = session.experiment({"compression": -0.08}, None)
+    assert obs["prediction"] is None
+    with pytest.raises(ProtocolError, match="or null"):
+        session.experiment({"compression": -0.08}, [None])
+    rec = session.record.lab[0]
+    assert rec.prediction is None and (rec.true_outcome is None) == (obs["status"] != "ok")
+
+
 def test_budget_is_enforced(session):
     _finish_pretest(session)
     while len(session.record.lab) < session.task.budget:
