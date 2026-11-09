@@ -1,0 +1,26 @@
+learner_v3_main_s3.jsonl pretest: 3/3 hits; 3 distinct knob settings
+    goal [0.6797636506195089] knobs {'draw': -0.093, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.66783] status ok success True
+    goal [0.6514158594962544] knobs {'draw': -0.089, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.65606] status ok success True
+    goal [0.5372399588431895] knobs {'draw': -0.077, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.52376] status ok success True
+learner_v3_main_s3.jsonl exam: 8/8 hits; 8 distinct knob settings
+    goal [0.520079217958142] knobs {'draw': -0.07764, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.52338] status ok success True
+    goal [0.7051619099462668] knobs {'draw': -0.09861, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.7189] status ok success True
+    goal [0.649949493722851] knobs {'draw': -0.09116, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.65621] status ok success True
+    goal [0.5090629786088662] knobs {'draw': -0.07652, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.51394] status ok success True
+    goal [0.48665093512099883] knobs {'draw': -0.07436, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.49591] status ok success True
+    goal [0.5905667391194174] knobs {'draw': -0.08483, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.58489] status ok success True
+    goal [0.547278369889741] knobs {'draw': -0.08042, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.55382] status ok success True
+    goal [0.45624059246563264] knobs {'draw': -0.07175, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.46923] status ok success True
+learner_v3_twin03_s3.jsonl pretest: 3/3 hits; 3 distinct knob settings
+    goal [0.7071714417845277] knobs {'draw': -0.0985, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.7214] status ok success True
+    goal [0.5001656629640273] knobs {'draw': -0.073, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.47823] status ok success True
+    goal [0.7159233784390613] knobs {'draw': -0.1, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.7204] status ok success True
+learner_v3_twin03_s3.jsonl exam: 8/8 hits; 8 distinct knob settings
+    goal [0.7138548255467456] knobs {'draw': -0.1005, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.73262] status ok success True
+    goal [0.51083373458564] knobs {'draw': -0.0778, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.52162] status ok success True
+    goal [0.6907660809133904] knobs {'draw': -0.0976, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.70297] status ok success True
+    goal [0.622758959652038] knobs {'draw': -0.0892, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.62109] status ok success True
+    goal [0.6627472619732637] knobs {'draw': -0.0941, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.67731] status ok success True
+    goal [0.6623498980975662] knobs {'draw': -0.094, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.6855] status ok success True
+    goal [0.44704857532899284] knobs {'draw': -0.0711, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.45918] status ok success True
+    goal [0.6029511255372655] knobs {'draw': -0.0871, 'stroke_a': 0.0, 'stroke_b': 0.0, 'stroke_c': 0.0} observed [0.61099] status ok success True

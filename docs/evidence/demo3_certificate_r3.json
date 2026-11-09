@@ -1,0 +1,42 @@
+{
+  "report": "CERTIFIED\nC0 construction rules: PASS. all construction checks passed\nC0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy\nC1 existence: PASS value=1.000 threshold=0.8. privileged oracle hit 48/48 goals under actuation noise (95% CI 0.93-1.00)\nC0 timestep convergence: PASS value=0.865 threshold=1. halving the timestep moves solving outcomes by 0.87 x tolerance\nC1b robustness: PASS value=0.979 threshold=0.6. 188/192 neighbours (+-1% of each knob range) still succeed\nC2 necessity (nominal parameters): PASS value=0.146 threshold=0.3. over the prior, solving with prior-centre parameters hits 14/96 goals (95% CI 0.09-0.23; in this run's world: 0/24)\nC2 necessity (single fixed action): PASS value=0.229 threshold=0.3. the best single action reaches 23% of goals\nC3 modification test: PASS value=4.014 threshold=1.5. every modifiable dimension moves outcomes by at least 4.01 x tolerance at its tested value\nC3 identifiability (posterior predictive): PASS value=0.024 threshold=0.5. after 11 experiments the outcome uncertainty is 0.02 x tolerance (before experiments: 8.22 x)\nC3 learnability (gray-box reference learner): WARN value=0.625 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 11 experiments, hit 10/16 goals (independent fits: 6/8, 4/8; goals within one fit share its errors); advisory only: this heuristic fit is a weak learner, so a low score does not block certification, but the task may be hard to learn within budget",
+  "stats": {
+    "oracle_success": 1.0,
+    "nominal_success": 0.14583333333333334,
+    "nominal_success_this_world": 0.0,
+    "fixed_action_coverage": 0.22916666666666666,
+    "modification_effect_over_tol": {
+      "carriage.size1": 4.014174894577838,
+      "cap.size1": 4.400542248958763
+    },
+    "predictive_std_over_tol": 0.023561423224125317,
+    "prior_std_over_tol": 8.21668721058109,
+    "relevant_parameters": [
+      "stiffness.coil_stiff",
+      "friction.aluminium",
+      "gain.linear_actuator",
+      "frictionloss.rail"
+    ],
+    "reference_success": 0.625,
+    "reference_fit_hits": [
+      "6/8",
+      "4/8"
+    ],
+    "reference_unit_error": [
+      {
+        "stiffness.coil_stiff": 0.12693555729058165,
+        "friction.aluminium": 0.06167697167274,
+        "gain.linear_actuator": 0.1851032816406156,
+        "frictionloss.rail": 0.15661914772803087
+      },
+      {
+        "stiffness.coil_stiff": 0.03211159616452519,
+        "friction.aluminium": 0.3329233817004955,
+        "gain.linear_actuator": 0.18509312312923415,
+        "frictionloss.rail": 0.36381274342574976
+      }
+    ],
+    "simulations": 8881
+  },
+  "seconds": 70.55112981796265
+}

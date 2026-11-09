@@ -1,0 +1,95 @@
+{
+  "round": 1,
+  "device_version": 1,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=0.958 threshold=0.8. privileged oracle hit 46/48 goals under actuation noise (95% CI 0.86-0.99)",
+    "C0 timestep convergence: PASS value=0.771 threshold=1. halving the timestep moves solving outcomes by 0.77 x tolerance",
+    "C1b robustness: PASS value=0.967 threshold=0.6. 89/92 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.229 threshold=0.3. over the prior, solving with prior-centre parameters hits 22/96 goals (95% CI 0.16-0.32; in this run's world: 0/24) BORDERLINE: the interval straddles the threshold, so the referee's decision can go either way; add margin",
+    "C2 necessity (single fixed action): PASS value=0.258 threshold=0.3. the best single action reaches 26% of goals",
+    "C3 modification test: PASS value=5.081 threshold=1.5. every modifiable dimension moves outcomes by at least 5.08 x tolerance at its tested value",
+    "C3 identifiability (posterior predictive): PASS value=0.010 threshold=0.5. after 28 experiments the outcome uncertainty is 0.01 x tolerance (before experiments: 6.50 x)",
+    "C3 learnability (gray-box reference learner): PASS value=0.875 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 28 experiments, hit 14/16 goals (independent fits: 8/8, 6/8; goals within one fit share its errors)"
+  ],
+  "reference_learner_success": 0.875,
+  "oracle_success": 0.9583333333333334,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 28,
+      "budget": 28,
+      "prediction_error_first_vs_last": [
+        0.8486332519726629,
+        0.24289768405905132
+      ],
+      "probe_errors_over_tol": [
+        0.04814356739709739,
+        0.0
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified carriage.size1=0.094": 1.0,
+        "modified cap.size1=0.086": 1.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 0.875,
+      "experiments_used": 28,
+      "budget": 28,
+      "prediction_error_first_vs_last": [
+        0.516476094730643,
+        0.11081446092667488
+      ],
+      "probe_errors_over_tol": [
+        0.3007624256447701,
+        0.0
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.4,
+        "extrapolation": null,
+        "modified carriage.size1=0.094": 1.0,
+        "modified cap.size1=0.086": 1.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "theory_inaccurate"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.05859375,
+  "swap_test": {
+    "A_on_A": 1.0,
+    "B_on_B": 0.4,
+    "A_on_B": 0.0,
+    "B_on_A": 1.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "carriage.size1": 7.518520485732729,
+      "cap.size1": 7.8208225623633565
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [
+    {
+      "category": "suspected_unsolvable",
+      "text": "The upper portion of the declared goal space appears unreachable: even the strongest permitted launch remained too short to cover goals near the stated upper bound within tolerance."
+    }
+  ],
+  "guidance": "Learner exam success 94% is above the target band 30%-80%: the next version should be harder in a new dimension. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions)."
+}
