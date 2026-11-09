@@ -1,0 +1,218 @@
+{
+  "version": 4,
+  "title": "Gated ramp launcher",
+  "goal_text": "A latched plunger is pressed back against a coil spring with a ball on its face. On release the spring and the actuator throw it forward; past the spring's rest point the plunger slows and the ball runs on alone. It climbs the locked ramp, then must shove a sprung gate plate off the ramp lip before it can fly. Climbing costs speed but buys launch angle and height; the gate takes a bite out of the shot and holds it outright if it arrives too slowly. Set pull-back, actuator command and tilt so the ball first touches the floor at the target distance along +y from the table centre.",
+  "manual": "Device 'gated_ramp_launcher' (7 parts). Coordinates in metres, z up, ground at z=0. Joint coordinates are 0 in the pose described here.\nParts:\n- table: box 0.120 x 0.400 x 0.500 m, concrete, mass 57.600 kg; centre (0.000, 0.000, 0.250), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.060, -0.200, 0.000)..(0.060, 0.200, 0.500); rests on the ground, fixed in place\n- track: box 0.120 x 0.400 x 0.020 m, wood, mass 0.624 kg; centre (0.000, 0.000, 0.510), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.060, -0.200, 0.500)..(0.060, 0.200, 0.520); rigidly fixed to 'table'\n- ramp: box 0.120 x 0.260 x 0.016 m, wood, mass 0.324 kg; centre (0.000, 0.330, 0.512), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.060, 0.200, 0.504)..(0.060, 0.460, 0.520); hinge joint to 'track' at (0.000, 0.200, 0.520), axis (1.000, 0.000, 0.000), bearing model, end stops [0.000, 0.550] rad\n- gate: box 0.100 x 0.010 x 0.014 m, aluminium, sealed, mass unknown (between 0.02 and 0.1 kg); centre (0.000, 0.455, 0.527), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.050, 0.450, 0.520)..(0.050, 0.460, 0.534); hinge joint to 'ramp' at (0.000, 0.455, 0.520), axis (1.000, 0.000, 0.000), bearing model, end stops [0.000, 2.000] rad, torsion_soft spring relaxed at 0.000\n- stand: box 0.080 x 0.060 x 0.580 m, aluminium, mass 7.517 kg; centre (0.160, 0.105, 0.290), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (0.120, 0.075, 0.000)..(0.200, 0.135, 0.580); rests on the ground, fixed in place\n- plunger: box 0.150 x 0.060 x 0.016 m, wood, mass 0.094 kg; centre (0.045, 0.105, 0.545), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.030, 0.075, 0.537)..(0.120, 0.135, 0.553); slide joint to 'stand' at (0.120, 0.105, 0.545), axis (0.000, 1.000, 0.000), rail model, end stops [-0.340, 0.000] m, coil_stiff spring relaxed at -0.100\n- ball: sphere radius 0.025 m, steel, sealed, mass unknown (between 0.3 and 0.9 kg); centre (0.000, 0.160, 0.545), orientation (rx, ry, rz) (0.000, 0.000, 0.000) rad; extent (-0.025, 0.135, 0.520)..(0.025, 0.185, 0.570); loose (free body), carried by 'plunger' when it is set up\nActuators (command in [-1, 1]):\n- drive: linear_actuator driving 'plunger'\nLatches (hold the joint at its starting value until released):\n- hold: locks 'plunger'\n- tilt_lock: locks 'ramp'\nSensors (Gaussian noise, standard deviation):\n- plunger_x: joint_angle of 'plunger', noise 0.002\n- plunger_v: joint_velocity of 'plunger', noise 0.01\n- gate_a: joint_angle of 'gate', noise 0.002\n- ball_v: velocity of 'ball', noise 0.01\nPhysics: rigid bodies with soft contacts, gravity 9.81 m/s^2 along -z. Contact friction between two surfaces is the larger of their two coefficients. Unknowns of scope 'world' are properties of a material or of a catalog part model (bearing, rail, spring, motor type): they are identical in every device and every instance in this world. Unknowns of scope 'device' belong to this device and are drawn anew for every instance.\nBefore each run: joint of 'plunger' is set to knob 'pullback'; joint of 'ramp' is set to knob 'tilt'\nAction program (then all commands 0 until the end): phase 0: lasts 0.5 s; commands [drive = knob 'drive']; release hold at start | phase 1: lasts 2.5 s; commands [none]",
+  "knobs": [
+    {
+      "name": "pullback",
+      "low": -0.32,
+      "high": -0.12,
+      "unit": "m",
+      "description": "plunger position on its rail before release; more negative pulls the plunger (and the ball with it) further back and compresses the spring more"
+    },
+    {
+      "name": "drive",
+      "low": 0.0,
+      "high": 0.7,
+      "unit": "-",
+      "description": "command held on the linear actuator during the drive phase; it pushes the plunger forward alongside the spring"
+    },
+    {
+      "name": "tilt",
+      "low": 0.0,
+      "high": 0.5,
+      "unit": "rad",
+      "description": "angle at which the take-off ramp is locked before the run; 0 leaves it flush with the rail, larger values raise its far end so the ball must run uphill before it reaches the gate"
+    }
+  ],
+  "sensors": [
+    {
+      "name": "plunger_x",
+      "kind": "joint_angle",
+      "part": "plunger",
+      "noise": 0.002,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "plunger_v",
+      "kind": "joint_velocity",
+      "part": "plunger",
+      "noise": 0.01,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "gate_a",
+      "kind": "joint_angle",
+      "part": "gate",
+      "noise": 0.002,
+      "rate_hz": 25.0
+    },
+    {
+      "name": "ball_v",
+      "kind": "velocity",
+      "part": "ball",
+      "noise": 0.01,
+      "rate_hz": 25.0
+    }
+  ],
+  "unknowns": [
+    {
+      "name": "damping.bearing",
+      "description": "bearing viscous damping",
+      "low": 0.002,
+      "high": 0.015,
+      "unit": "N*m*s/rad",
+      "scope": "world"
+    },
+    {
+      "name": "damping.rail",
+      "description": "rail viscous damping",
+      "low": 0.1,
+      "high": 0.8,
+      "unit": "N*s/m",
+      "scope": "world"
+    },
+    {
+      "name": "friction.aluminium",
+      "description": "sliding friction coefficient of aluminium",
+      "low": 0.2,
+      "high": 0.55,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "friction.concrete",
+      "description": "sliding friction coefficient of concrete",
+      "low": 0.4,
+      "high": 0.9,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "friction.steel",
+      "description": "sliding friction coefficient of steel",
+      "low": 0.15,
+      "high": 0.45,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "friction.wood",
+      "description": "sliding friction coefficient of wood",
+      "low": 0.25,
+      "high": 0.65,
+      "unit": "-",
+      "scope": "world"
+    },
+    {
+      "name": "frictionloss.bearing",
+      "description": "bearing dry friction",
+      "low": 0.0005,
+      "high": 0.004,
+      "unit": "N*m",
+      "scope": "world"
+    },
+    {
+      "name": "frictionloss.rail",
+      "description": "rail dry friction",
+      "low": 0.05,
+      "high": 0.4,
+      "unit": "N",
+      "scope": "world"
+    },
+    {
+      "name": "gain.linear_actuator",
+      "description": "linear_actuator output per unit command",
+      "low": 5.0,
+      "high": 30.0,
+      "unit": "N",
+      "scope": "world"
+    },
+    {
+      "name": "rolling.concrete",
+      "description": "rolling resistance length of concrete",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m",
+      "scope": "world"
+    },
+    {
+      "name": "rolling.steel",
+      "description": "rolling resistance length of steel",
+      "low": 0.0002,
+      "high": 0.0015,
+      "unit": "m",
+      "scope": "world"
+    },
+    {
+      "name": "stiffness.coil_stiff",
+      "description": "coil_stiff stiffness",
+      "low": 250.0,
+      "high": 1500.0,
+      "unit": "N/m",
+      "scope": "world"
+    },
+    {
+      "name": "stiffness.torsion_soft",
+      "description": "torsion_soft stiffness",
+      "low": 0.5,
+      "high": 3.0,
+      "unit": "N*m/rad",
+      "scope": "world"
+    },
+    {
+      "name": "ball_mass",
+      "description": "sealed mass of the launched ball",
+      "low": 0.3,
+      "high": 0.9,
+      "unit": "kg",
+      "scope": "device"
+    },
+    {
+      "name": "gate_mass",
+      "description": "sealed mass of the hinged gate plate at the ramp lip",
+      "low": 0.02,
+      "high": 0.1,
+      "unit": "kg",
+      "scope": "device"
+    }
+  ],
+  "outcome": {
+    "kind": "landing_point",
+    "part": "ball",
+    "axes": [
+      "y"
+    ],
+    "description": "the y coordinate(s) of 'ball' at the moment it first touches the ground",
+    "noise": 0.003,
+    "goal_space": [
+      [
+        0.71,
+        1.22
+      ]
+    ],
+    "tolerance": 0.06
+  },
+  "modifiable": [
+    {
+      "name": "gate.size2",
+      "current": 0.007,
+      "low": 0.005,
+      "high": 0.016
+    }
+  ],
+  "protocol": {
+    "pretest_goals": 3,
+    "budget": 54,
+    "probe_every": 10,
+    "exam_goals": 8,
+    "horizon": 3.0
+  },
+  "rules": "Protocol (enforced by the lab tool):\n1. Pretest: you get 3 goals one at a time and must choose knob values for each\n   before running any experiment on this device. Results are revealed only at the end.\n2. Lab: up to 54 experiments. Every experiment requires your prediction of the\n   outcome before you see the result. Every 10th experiment is chosen by the referee:\n   you are told the knob values, you predict, then you see the result.\n3. Theory: submit predict.py defining predict(knobs: dict, visible: dict) -> list[float],\n   your model of the outcome. `visible` holds the modifiable dimensions listed below; the\n   referee may evaluate your model with different values for them, without letting you\n   experiment. Also submit your estimates of the unknown quantities with 90% intervals.\n4. Exam: 8 goals one at a time, one attempt each, no experiments. Results are\n   revealed only at the end.\n5. Field report: optional tickets about the interface (bugs, ambiguity, suspected\n   unsolvability). Tickets go to the device builder; they cannot contain answers.\nOutcome is a failure if the run status is not \"ok\" (e.g. the part never landed, or was\nstill moving at the end of the run).",
+  "changelog": [
+    "sensor removed: ball_p",
+    "knobs changed: ['pullback', 'drive', 'tilt']",
+    "experiment budget 60 -> 54"
+  ]
+}

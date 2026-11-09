@@ -1,0 +1,100 @@
+{
+  "round": 4,
+  "device_version": 4,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=0.896 threshold=0.8. privileged oracle hit 86/96 goals under actuation noise (95% CI 0.82-0.94)",
+    "C0 timestep convergence: PASS value=0.463 threshold=1. halving the timestep moves solving outcomes by 0.46 x tolerance",
+    "C1b robustness: PASS value=0.931 threshold=0.6. 257/276 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.125 threshold=0.3. over the prior, solving with prior-centre parameters hits 12/96 goals (95% CI 0.07-0.21; in this run's world: 0/48)",
+    "C2 necessity (single fixed action): PASS value=0.272 threshold=0.3. the best single action reaches 27% of goals",
+    "C3 modification test: PASS value=4.233 threshold=1.5. every modifiable dimension moves outcomes by at least 4.23 x tolerance at its tested value",
+    "C3 identifiability (posterior predictive): PASS value=0.006 threshold=0.5. after 54 experiments the outcome uncertainty is 0.01 x tolerance (before experiments: 5.91 x)",
+    "C3 learnability (gray-box reference learner): PASS value=0.875 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 54 experiments, hit 14/16 goals (independent fits: 7/8, 7/8; goals within one fit share its errors)"
+  ],
+  "reference_learner_success": 0.875,
+  "oracle_success": 0.8958333333333334,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 1.0,
+      "exam_success": 1.0,
+      "experiments_used": 54,
+      "budget": 54,
+      "prediction_error_first_vs_last": [
+        0.4049191076054874,
+        0.23516482055789453
+      ],
+      "probe_errors_over_tol": [
+        4.939594384466024,
+        null,
+        null,
+        0.9371597387415036,
+        0.5522874463838738
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified gate.size2=0.0142": 0.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "no_improvement_over_pretest",
+        "modification_fail"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 0.0,
+      "exam_success": 0.875,
+      "experiments_used": 54,
+      "budget": 54,
+      "prediction_error_first_vs_last": [
+        0.3289764157385633,
+        0.13720075970850287
+      ],
+      "probe_errors_over_tol": [
+        null,
+        0.3718097372314803,
+        0.07227173102563415,
+        null,
+        null
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified gate.size2=0.0142": 0.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "modification_fail"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.05859375,
+  "swap_test": {
+    "A_on_A": 1.0,
+    "B_on_B": 1.0,
+    "A_on_B": 0.0,
+    "B_on_A": 0.0
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "gate.size2": 5.365298761858367
+    },
+    "blackbox_exam_success": 1.0
+  },
+  "tickets": [
+    {
+      "category": "interface_bug",
+      "text": "probe-result does not accept [null] for a predicted no_landing outcome; it errors and clears the pending probe."
+    }
+  ],
+  "guidance": "Learner exam success 94% is above the target band 30%-80%: the next version should be harder in a new dimension. A model-free curve-fitting baseline also reached 100%: the challenge can be brute-forced; prefer changes that need physical understanding (more knobs, smaller budget, consequential modifiable dimensions)."
+}

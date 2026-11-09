@@ -1,0 +1,19 @@
+{
+  "estimates": {
+    "damping.bearing": {"value": 0.008, "low": 0.002, "high": 0.015},
+    "damping.rail": {"value": 0.55, "low": 0.3, "high": 0.8},
+    "friction.aluminium": {"value": 0.35, "low": 0.2, "high": 0.55},
+    "friction.concrete": {"value": 0.65, "low": 0.4, "high": 0.9},
+    "friction.steel": {"value": 0.3, "low": 0.15, "high": 0.45},
+    "friction.wood": {"value": 0.55, "low": 0.45, "high": 0.65},
+    "frictionloss.bearing": {"value": 0.002, "low": 0.0005, "high": 0.004},
+    "frictionloss.rail": {"value": 0.25, "low": 0.1, "high": 0.4},
+    "gain.linear_actuator": {"value": 6.0, "low": 5.0, "high": 10.0},
+    "rolling.concrete": {"value": 0.0008, "low": 0.0002, "high": 0.0015},
+    "rolling.steel": {"value": 0.0008, "low": 0.0002, "high": 0.0015},
+    "stiffness.coil_stiff": {"value": 360.0, "low": 250.0, "high": 520.0},
+    "stiffness.torsion_soft": {"value": 1.5, "low": 0.5, "high": 3.0},
+    "ball_mass": {"value": 0.85, "low": 0.65, "high": 0.9},
+    "gate_mass": {"value": 0.08, "low": 0.05, "high": 0.1}
+  }
+}

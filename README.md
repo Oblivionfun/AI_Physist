@@ -12,6 +12,7 @@
 
 - macOS（隔离依赖系统自带的 `sandbox-exec`），Python 3.12，[uv](https://docs.astral.sh/uv/)。
 - 真实 LLM 运行需要已登录的 `cursor-agent` CLI（`cursor-agent status`）。
+- 一次 5 轮的 LLM 运行约 4 小时，请接通电源、不要合盖。运行期间会阻止空闲睡眠，但笔记本合盖加电池会强制睡眠；跨越睡眠的会话会被标为无效。
 
 ```bash
 uv sync                      # 安装 mlab 及依赖（mujoco、numpy、scipy、pydantic、matplotlib）
@@ -58,6 +59,7 @@ uv run python -m mlab.analysis.demo_report demo     # 写入 demo/recorded/demo/
 | [`demo/recorded/demo-1/`](demo/recorded/demo-1/index.md) | 正式演示：建造者 claude-opus-5-thinking-high，学习者 gpt-5.6-sol-high，3 轮 |
 | [`demo/recorded/demo-1-weak/`](demo/recorded/demo-1-weak/index.md) | 对照：同样的装置和实例，学习者换成 gpt-5.3-codex |
 | [`demo/recorded/demo-1-amnesic/`](demo/recorded/demo-1-amnesic/index.md) | 对照：同一强模型，每次会话前清空笔记 |
+| [`demo/recorded/demo-2/`](demo/recorded/demo-2/index.md) | 第二次闭环：修复后的裁判、新世界；含两次被拒和修改，4 轮有效 |
 | [`demo/recorded/llm-learner-smoke/`](demo/recorded/llm-learner-smoke/index.md) | 补充：参照装置上的 LLM 学习者冒烟运行 |
 
 每份演示包含时间线、图表、MuJoCo 回放动画，以及建造者的设计日志和学习者的笔记、理论代码。结论汇总见 [`DESIGN.md`](DESIGN.md) 第 3 节。

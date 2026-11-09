@@ -1,0 +1,59 @@
+{
+  "estimates": {
+    "damping.rail": {
+      "value": 0.45,
+      "low": 0.15,
+      "high": 0.75
+    },
+    "friction.aluminium": {
+      "value": 0.375,
+      "low": 0.21,
+      "high": 0.54
+    },
+    "friction.concrete": {
+      "value": 0.65,
+      "low": 0.42,
+      "high": 0.88
+    },
+    "friction.steel": {
+      "value": 0.30,
+      "low": 0.16,
+      "high": 0.44
+    },
+    "friction.wood": {
+      "value": 0.45,
+      "low": 0.27,
+      "high": 0.63
+    },
+    "frictionloss.rail": {
+      "value": 0.22,
+      "low": 0.06,
+      "high": 0.39
+    },
+    "gain.linear_actuator": {
+      "value": 6.0,
+      "low": 5.0,
+      "high": 9.0
+    },
+    "rolling.concrete": {
+      "value": 0.00042,
+      "low": 0.00030,
+      "high": 0.00056
+    },
+    "rolling.steel": {
+      "value": 0.00020,
+      "low": 0.00020,
+      "high": 0.00030
+    },
+    "stiffness.coil_stiff": {
+      "value": 300.0,
+      "low": 250.0,
+      "high": 450.0
+    },
+    "ball_mass": {
+      "value": 0.55,
+      "low": 0.40,
+      "high": 0.75
+    }
+  }
+}

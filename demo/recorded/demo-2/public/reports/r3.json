@@ -1,0 +1,117 @@
+{
+  "round": 3,
+  "device_version": 3,
+  "certificate": [
+    "C0 construction rules: PASS. all construction checks passed",
+    "C0 physics: PASS value=0.000 threshold=0.02. stable for all sampled actions; passive energy gain 0.000% of peak kinetic energy",
+    "C1 existence: PASS value=0.847 threshold=0.8. privileged oracle hit 122/144 goals under actuation noise (95% CI 0.78-0.90)",
+    "C0 timestep convergence: PASS value=0.475 threshold=1. halving the timestep moves solving outcomes by 0.48 x tolerance",
+    "C1b robustness: PASS value=0.971 threshold=0.6. 373/384 neighbours (+-1% of each knob range) still succeed",
+    "C2 necessity (nominal parameters): PASS value=0.146 threshold=0.3. over the prior, solving with prior-centre parameters hits 14/96 goals (95% CI 0.09-0.23; in this run's world: 0/72)",
+    "C2 necessity (single fixed action): PASS value=0.243 threshold=0.3. the best single action reaches 24% of goals",
+    "C3 modification test: PASS value=1.549 threshold=1.5. every modifiable dimension moves outcomes by at least 1.55 x tolerance at its tested value",
+    "C3 identifiability (posterior predictive): PASS value=0.004 threshold=0.5. after 60 experiments the outcome uncertainty is 0.00 x tolerance (before experiments: 6.91 x)",
+    "C3 learnability (gray-box reference learner): PASS value=0.812 threshold=0.7. a learner that knows the structure but not the values, using only the public interface and 60 experiments, hit 13/16 goals (independent fits: 6/8, 7/8; goals within one fit share its errors)"
+  ],
+  "reference_learner_success": 0.8125,
+  "oracle_success": 0.8472222222222222,
+  "instances": [
+    {
+      "label": "A",
+      "pretest_success": 0.0,
+      "exam_success": 1.0,
+      "experiments_used": 60,
+      "budget": 60,
+      "prediction_error_first_vs_last": [
+        0.8960412008825654,
+        0.3622834130203997
+      ],
+      "probe_errors_over_tol": [
+        0.6000897757023875,
+        null,
+        0.3967618560669406,
+        0.10222059785476487,
+        0.32540267210937057,
+        1.1183689448031313
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 0.8,
+        "extrapolation": null,
+        "modified ramp.size1=0.298": 0.2,
+        "modified gate.size2=0.0118": 0.0
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "modification_fail"
+      ],
+      "invalid": null
+    },
+    {
+      "label": "B",
+      "pretest_success": 1.0,
+      "exam_success": 0.75,
+      "experiments_used": 60,
+      "budget": 60,
+      "prediction_error_first_vs_last": [
+        0.3942940280701246,
+        0.14589777198634007
+      ],
+      "probe_errors_over_tol": [
+        2.284142789059844,
+        null,
+        0.548526594064049,
+        0.38351720024181746,
+        0.4540006875194495,
+        null
+      ],
+      "theory_hit_rates": {
+        "in_distribution": 1.0,
+        "extrapolation": null,
+        "modified ramp.size1=0.298": 0.6666666666666666,
+        "modified gate.size2=0.0118": 0.3333333333333333
+      },
+      "non_discriminating_tests": [],
+      "failure_tags": [
+        "budget_exhausted",
+        "no_improvement_over_pretest",
+        "modification_fail"
+      ],
+      "invalid": null
+    }
+  ],
+  "learnability": 0.109375,
+  "swap_test": {
+    "A_on_A": 0.8,
+    "B_on_B": 1.0,
+    "A_on_B": 0.0,
+    "B_on_A": 0.4
+  },
+  "old_theory_on_new_device": null,
+  "controls": {
+    "modification_effect_over_tol": {
+      "ramp.size1": 2.3323730118317676,
+      "gate.size2": 2.8419999528640068
+    },
+    "blackbox_exam_success": 0.75
+  },
+  "tickets": [
+    {
+      "category": "ambiguous_spec",
+      "text": "The protocol requires an outcome prediction even when a run is expected not to land, but neither the card nor CLI specifies a valid representation for that prediction; null and [null] are rejected."
+    },
+    {
+      "category": "interface_bug",
+      "text": "A rejected probe-result consumes the pending probe state, so the identical probe must be requested again before correcting the prediction."
+    },
+    {
+      "category": "suspected_unsolvable",
+      "text": "The empirically attainable maximum first-contact distance appears materially below the upper end of the declared goal space, so some high goals cannot be reached within tolerance."
+    },
+    {
+      "category": "ambiguous_spec",
+      "text": "Runs can have status no_landing, but experiment predictions and the theory API require a list of floats and provide no documented way to predict that discrete outcome; a JSON null prediction is rejected."
+    }
+  ],
+  "guidance": "Learner exam success 88% is above the target band 30%-80%: the next version should be harder in a new dimension."
+}
