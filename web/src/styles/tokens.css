@@ -1,0 +1,56 @@
+/*
+ * Direction: precision instrument / lab record paper (chosen 2026-11-09).
+ * Colour roles are part of the tokens and must not drift:
+ *   --signal  only the learner's predictions and self-reports (notebook, belief, theory)
+ *   --truth   only hidden ground truth, visible in the god view
+ *   --hit / --miss  only goal outcomes
+ * Everything else is neutral ink on cool paper. No cards, no shadows, no radius.
+ */
+:root {
+  --paper: #f2f4f5;
+  --paper-hi: #fbfcfc;
+  --grid: #e4e8eb;
+  --grid-major: #d6dce0;
+  --rule: #c3cacf;
+  --rule-soft: #dbe0e3;
+
+  --ink: #14181b;
+  --ink-2: #485157;
+  --ink-3: #78818a;
+  --ink-4: #a6aeb4;
+
+  --signal: #f0541a;
+  --signal-ink: #b23a0b;
+  --signal-wash: #fde5da;
+
+  --truth: #1b58c2;
+  --truth-ink: #164aa3;
+  --truth-wash: #dde7f8;
+
+  --hit: #16804a;
+  --hit-wash: #ddf0e5;
+  --miss: #c42d25;
+  --miss-wash: #f8dfdd;
+
+  --font-sans: "IBM Plex Sans", "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --t-11: 11px;
+  --t-12: 12px;
+  --t-13: 13px;
+  --t-15: 15px;
+  --t-18: 18px;
+  --t-24: 24px;
+  --t-32: 32px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+
+  --hair: 1px solid var(--rule);
+  --hair-soft: 1px solid var(--rule-soft);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}

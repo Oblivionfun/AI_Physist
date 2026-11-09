@@ -1,0 +1,236 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:
+    80px 80px,
+    80px 80px,
+    16px 16px,
+    16px 16px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--t-13);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-width: 1280px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section label: index number, mono caps, wide tracking. */
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.label b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--ink-3);
+}
+
+.signal {
+  color: var(--signal-ink);
+}
+
+.truth {
+  color: var(--truth-ink);
+}
+
+.hit {
+  color: var(--hit);
+}
+
+.miss {
+  color: var(--miss);
+}
+
+.rule-top {
+  border-top: var(--hair);
+}
+
+.rule-bottom {
+  border-bottom: var(--hair);
+}
+
+/* Segmented control: hairline frame, ink fill when active. */
+.seg {
+  display: inline-flex;
+  border: var(--hair);
+  background: var(--paper-hi);
+}
+
+.seg > button {
+  padding: 3px 10px;
+  font-size: var(--t-12);
+  border-right: var(--hair);
+  color: var(--ink-2);
+  transition: background-color 120ms var(--ease), color 120ms var(--ease);
+}
+
+.seg > button:last-child {
+  border-right: none;
+}
+
+.seg > button:hover {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.seg > button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper-hi);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: var(--hair);
+  background: var(--paper-hi);
+  font-size: var(--t-12);
+  color: var(--ink-2);
+  transition: border-color 120ms var(--ease), color 120ms var(--ease);
+}
+
+.btn:hover {
+  border-color: var(--ink-2);
+  color: var(--ink);
+}
+
+.btn[aria-pressed="true"] {
+  border-color: var(--truth);
+  color: var(--truth-ink);
+  background: var(--truth-wash);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 5px;
+  border: var(--hair);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  background: var(--paper-hi);
+  white-space: nowrap;
+}
+
+.tag.pass {
+  border-color: var(--ink-3);
+}
+
+.tag.fail {
+  border-color: var(--miss);
+  color: var(--miss);
+  background: var(--miss-wash);
+}
+
+.tag.warn {
+  border-style: dashed;
+}
+
+.tag.hit {
+  border-color: var(--hit);
+  color: var(--hit);
+  background: var(--hit-wash);
+}
+
+.tag.miss {
+  border-color: var(--miss);
+  color: var(--miss);
+  background: var(--miss-wash);
+}
+
+.tag.signal {
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  background: var(--signal-wash);
+}
+
+.tag.truth {
+  border-color: var(--truth);
+  color: var(--truth-ink);
+  background: var(--truth-wash);
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-5 {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
