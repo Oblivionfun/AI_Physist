@@ -16,7 +16,11 @@ from mlab.sandbox.policies import wrap
 
 # stderr markers of failures outside the agent's control (network, service availability).
 TRANSIENT_ERRORS = ("[unavailable]", "[resource_exhausted]", "ENOTFOUND", "EAI_AGAIN",
-                    "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "socket hang up")
+                    "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "socket hang up",
+                    "RetriableError", "Connection stalled")
+# Wall-clock time beyond monotonic time means the machine slept: subprocess timeouts do not
+# advance during sleep on macOS, and the agent loses its connection.
+SLEEP_TOLERANCE_S = 60.0
 
 
 @dataclass
@@ -31,7 +35,10 @@ class AgentResult:
     infra_error: str | None = None
 
 
-def infra_error(exit_code: int | None, timed_out: bool, stderr: str) -> str | None:
+def infra_error(exit_code: int | None, timed_out: bool, stderr: str,
+                slept_s: float = 0.0) -> str | None:
+    if slept_s > SLEEP_TOLERANCE_S:
+        return f"the machine slept for {slept_s:.0f}s during the session"
     if timed_out or exit_code in (0, None):
         return None
     return next((line.strip()[:200] for line in stderr.splitlines()
@@ -104,7 +111,7 @@ class CursorAgentBackend:
         transcript.parent.mkdir(parents=True, exist_ok=True)
         err_path = transcript.with_suffix(".stderr")
         err_offset = err_path.stat().st_size if err_path.exists() else 0
-        t0 = time.time()
+        t0, m0 = time.time(), time.monotonic()
         timed_out = False
         # The agent's stdio must be pipes: its runtime stats stdio at start-up, and a file in a
         # directory the sandbox denies (the referee area) makes it abort.
@@ -134,5 +141,7 @@ class CursorAgentBackend:
             with err_path.open("rb") as f:
                 f.seek(err_offset)
                 stderr = f.read().decode(errors="ignore")
-        return AgentResult(code, time.time() - t0, session_id, final, timed_out, tools, usage,
-                           infra_error(code, timed_out, stderr))
+        wall = time.time() - t0
+        slept = wall - (time.monotonic() - m0)
+        return AgentResult(code, wall, session_id, final, timed_out, tools, usage,
+                           infra_error(code, timed_out, stderr, slept))

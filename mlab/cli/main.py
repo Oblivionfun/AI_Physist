@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -22,9 +26,22 @@ from mlab.referee.channel import verify
 from mlab.sandbox.selftest import main as selftest_main
 
 
+def _log(message: str) -> None:
+    print(message, flush=True)
+
+
+def _keep_awake() -> None:
+    """Prevent idle sleep for the lifetime of this process (macOS). A closed lid on battery
+    still forces sleep; sessions that span a sleep are detected and marked invalid (D-019)."""
+    if sys.platform == "darwin" and shutil.which("caffeinate"):
+        subprocess.Popen(["caffeinate", "-i", "-w", str(os.getpid())])
+
+
 def _run(args: argparse.Namespace) -> int:
     run_id = args.run_id or time.strftime("run-%Y%m%d-%H%M%S")
     llm = args.builder == "cursor" or args.learner == "cursor"
+    if llm:
+        _keep_awake()
     cfg = RunConfig(run_id=run_id, rounds=args.rounds, seed=args.seed, profile=args.profile,
                     max_builder_attempts=args.max_attempts, sandbox_theories=llm,
                     runs_dir=Path(args.runs_dir) if args.runs_dir else default_runs_dir())
@@ -32,12 +49,13 @@ def _run(args: argparse.Namespace) -> int:
     transcripts, profiles = dirs.referee / "transcripts", dirs.referee / "profiles"
     if args.builder == "cursor":
         builder = LLMBuilder(CursorAgentBackend(args.builder_model, timeout=args.timeout),
-                             cfg.root, transcripts, profiles, cert_profile=args.profile)
+                             cfg.root, transcripts, profiles, cert_profile=args.profile, log=_log)
     else:
         builder = ReferenceBuilder()
     if args.learner == "cursor":
         learner = LLMLearner(CursorAgentBackend(args.learner_model, timeout=args.timeout),
-                             cfg.root, cfg.root / "learner" / "main", transcripts, profiles)
+                             cfg.root, cfg.root / "learner" / "main", transcripts, profiles,
+                             log=_log)
     else:
         learner = offline_learner(args.seed)
     orch = Orchestrator(cfg, builder, learner)
@@ -59,9 +77,10 @@ def _rerun(args: argparse.Namespace) -> int:
                     instances_from=source)
     dirs = RunDirs(cfg.root)
     if args.learner == "cursor":
+        _keep_awake()
         learner = LLMLearner(CursorAgentBackend(args.learner_model, timeout=args.timeout), cfg.root,
                              cfg.root / "learner" / "main", dirs.referee / "transcripts",
-                             dirs.referee / "profiles", amnesic=args.amnesic)
+                             dirs.referee / "profiles", log=_log, amnesic=args.amnesic)
     else:
         learner = offline_learner(secrets["seed"])
     summary = Orchestrator(cfg, RecordedBuilder(source), learner).run()

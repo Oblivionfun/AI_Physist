@@ -251,6 +251,12 @@ class LLMBuilder:
                              "invalid": invalid})
         self.log(f"  builder call {self.calls}: {'submitted' if out.exists() else 'no submission'} "
                  f"after {sum(r.seconds for r in runs):.0f}s" + (f" - {invalid}" if invalid else ""))
+        return self._read_submission(out)
+
+    def last_invalid(self) -> str | None:
+        return self.history[-1]["invalid"] if self.history else None
+
+    def _read_submission(self, out: Path) -> Submission | None:
         if not out.exists():
             return None
         try:

@@ -187,9 +187,12 @@ class Orchestrator:
             cert: Certificate | None = None
             thetas: list[dict] = []
             attempts = []
+            invalid: str | None = None
             for attempt in range(1, self.cfg.max_builder_attempts + 1):
                 cand = self.builder.propose(r, report_dict, rejection)
                 if cand is None:
+                    last_invalid = getattr(self.builder, "last_invalid", None)
+                    invalid = last_invalid() if callable(last_invalid) else None
                     break
                 _write(self.dirs.referee / "submissions" / f"r{r}_a{attempt}.json", cand.model_dump())
                 self.channel.append(1, "submission", {"round": r, "attempt": attempt,
@@ -207,8 +210,13 @@ class Orchestrator:
                 rejection = cert.report()
                 self.channel.append(4, "rejection", {"round": r, "attempt": attempt, "report": rejection})
             if sub is None or cert is None:
-                rounds.append({"round": r, "status": "builder_failed", "attempts": attempts})
-                self.log(f"[round {r}] builder failed to produce a certified device")
+                if invalid:
+                    rounds.append({"round": r, "status": "invalid_infrastructure",
+                                   "attempts": attempts, "invalid": invalid})
+                    self.log(f"[round {r}] INVALID: the builder session was lost ({invalid})")
+                else:
+                    rounds.append({"round": r, "status": "builder_failed", "attempts": attempts})
+                    self.log(f"[round {r}] builder failed to produce a certified device")
                 continue
 
             version += 1
@@ -268,10 +276,10 @@ class Orchestrator:
                 "swap": swap, "old_theory": old, "controls": controls,
                 "learner_seconds": [round(sec_a, 1), round(sec_b, 1)],
             })
-            invalid = [f"{m.label}: {m.invalid}" for m in (m_a, m_b) if m.invalid]
+            lost = [f"{m.label}: {m.invalid}" for m in (m_a, m_b) if m.invalid]
             self.log(f"[round {r}] v{version} {sub.device.name}: pretest {m_a.pretest_rate:.0%}/"
                      f"{m_b.pretest_rate:.0%}, exam {m_a.exam_rate:.0%}/{m_b.exam_rate:.0%}, swap {swap}, "
-                     f"controls {controls}" + (f", INVALID sessions {invalid}" if invalid else ""))
+                     f"controls {controls}" + (f", INVALID sessions {lost}" if lost else ""))
             prev_sub, prev_theory = sub, code_a
         summary = {"run_id": self.cfg.run_id, "builder": self.builder.name,
                    "learner": self.learner.name, "profile": self.cfg.profile, "rounds": rounds,

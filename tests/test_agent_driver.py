@@ -12,9 +12,15 @@ def _result(session: str | None, error: str | None = None, code: int = 0) -> Age
 
 def test_infra_error_needs_a_failed_exit_and_a_transient_marker():
     assert infra_error(1, False, DNS) is not None
+    assert infra_error(1, False, "RetriableError: Connection stalled repeatedly") is not None
     assert infra_error(0, False, DNS) is None
     assert infra_error(1, True, DNS) is None
     assert infra_error(1, False, "Traceback: ValueError") is None
+
+
+def test_a_session_spanning_machine_sleep_is_an_infrastructure_failure():
+    assert "slept" in infra_error(0, False, "", slept_s=900.0)
+    assert infra_error(0, False, "", slept_s=5.0) is None
 
 
 def _drive(script: list[AgentResult], done_after: int | None, monkeypatch):

@@ -80,6 +80,23 @@ def test_offline_loop_runs_one_round(tmp_path):
     assert not list((tmp_path / "t" / "public").rglob("secrets*"))
 
 
+class _LostBuilder:
+    name = "lost"
+
+    def propose(self, _round, _report, _rejection):
+        return None
+
+    def last_invalid(self):
+        return "infrastructure: the machine slept for 900s during the session"
+
+
+def test_builder_session_lost_to_infrastructure_marks_the_round_invalid(tmp_path):
+    cfg = RunConfig(run_id="t", rounds=1, seed=3, profile="test", runs_dir=tmp_path)
+    summary = Orchestrator(cfg, _LostBuilder(), offline_learner(3), log=lambda *_: None).run()
+    assert summary["rounds"][0]["status"] == "invalid_infrastructure"
+    assert "slept" in summary["rounds"][0]["invalid"]
+
+
 def test_rerun_reuses_world_devices_and_instances(tmp_path):
     src = RunConfig(run_id="src", rounds=1, seed=5, profile="test", runs_dir=tmp_path)
     Orchestrator(src, ReferenceBuilder(), offline_learner(5), log=lambda *_: None).run()
