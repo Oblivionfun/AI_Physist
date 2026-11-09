@@ -214,3 +214,10 @@
 - 走过的弯路：3D 空白（截图抓得太早；OrbitControls 目标点没生效；重演跑满 3 秒，球滚出画面）；响应切片默认旋钮取了两个实例合并的结果；导览引用了建造者的开场白而不是诊断。都已修正，见 process.md 阶段 15。
 - 验证：`pytest -q` 66 passed（新增 `tests/test_observatory.py` 6 项）；`ruff check observatory tests/test_observatory.py` 通过；`pnpm build`（含 `tsc --noEmit`）通过。
 - 遗留：demo-3 结束后导出它的静态包；把 `observatory` 写进 `pyproject.toml` 的脚本入口（需要 `uv sync`，运行期间不做）。
+
+## 2026-11-09 17:03 demo-3 在第 3 轮中断
+- 现象：第 3 轮（`bench_launcher_mk3`，4 个旋钮，预算 11 次）两个学习者会话都完成了，随后裁判跑黑盒对照时崩溃：`scripted.py:184` 处 `TypeError: 'NoneType' object is not iterable`。没有写成绩单、`sessions/r3_*.json` 和 `summary.json`，第 4、5 轮没有运行。
+- 原因：`SurrogateLearner._fit` 在有效结果少于 3 个时返回 `None`；拉丁超立方设计（`budget // 2` = 5 个点）用完之后，选点分支直接遍历 `gps_now`，没有先判断 `None`。前几轮预算是 50 到 70 次、球大多会落地，所以没有触发；这一轮预算 11 次，设计点里落地的少于 3 个。
+- 处理：没有修改 `mlab/`，修复和是否重跑由用户决定。这次中断属于裁判自身的缺陷，不是 Agent 的失败。
+- 观察窗：demo-3 没有 `summary.json`，`observatory export` 按设计拒绝导出；`observatory serve` 仍能完整查看已有的 3 轮。手动对 demo-3 跑了令牌审计：两侧工作区和会话记录里都没有出现观察窗令牌。
+- 观察窗接入 `pyproject.toml` 的脚本入口（`uv run observatory serve|export|index`），在确认没有运行进行后执行了 `uv sync`。

@@ -9,7 +9,7 @@ const recorded = resolve(here, "../../demo/recorded");
 const dest = resolve(here, "../dist/recorded");
 const index = join(recorded, "viz-index.json");
 if (!existsSync(index)) {
-  console.error(`no ${index}: run \`uv run python -m observatory export <run_id>\` first`);
+  console.error(`no ${index}: run \`uv run observatory export <run_id>\` first`);
   process.exit(1);
 }
 mkdirSync(dest, { recursive: true });

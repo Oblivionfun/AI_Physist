@@ -70,8 +70,8 @@ uv run python -m mlab.analysis.demo_report demo     # 写入 demo/recorded/demo/
 
 ```bash
 cd web && pnpm install && pnpm build && cd ..        # 构建前端（Node 24，pnpm）
-uv run python -m observatory export demo-2           # 为已结束的运行导出静态包到 demo/recorded/demo-2/viz/
-uv run python -m observatory serve                   # 本地服务：直播进行中的运行，也能看已录制的
+uv run observatory export demo-2                     # 为已结束的运行导出静态包到 demo/recorded/demo-2/viz/
+uv run observatory serve                             # 本地服务：直播进行中的运行，也能看已录制的
 ```
 
 - `serve` 会打印一个带令牌的地址 `http://127.0.0.1:<port>/#token=...`，只用浏览器打开它。Agent 的沙箱可以联网，令牌是这个服务唯一的访问控制，不要粘进任何 Agent 会话。

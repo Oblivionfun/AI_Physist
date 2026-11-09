@@ -87,7 +87,7 @@ export function App() {
               <p className="label">没有可显示的运行</p>
               <p className="muted">
                 {runs.length === 0
-                  ? "先用 `uv run python -m observatory export <run_id>` 导出一个运行，或用 `observatory serve` 打开直播。"
+                  ? "先用 `uv run observatory export <run_id>` 导出一个运行，或用 `uv run observatory serve` 打开直播。"
                   : "正在载入…"}
               </p>
             </div>
